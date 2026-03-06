@@ -1,0 +1,10 @@
+workflow_status:
+  product-brief-v1: "{planning_artifacts}/product-brief-MockExams-2026-03-04.md"
+  product-brief-v2: "{planning_artifacts}/product-brief-MockExams-v2-super-analyst.md"
+  prd-v1: "{planning_artifacts}/prd-MockExams-v1.md"
+  tech-spec-frontend: "{planning_artifacts}/tech-spec-frontend.md"
+  last_updated: "2026-03-06T12:00:00Z"
+  completed_by: "Lead Frontend Architect — tech-spec-frontend"
+  active_brief: "v2.6"
+  active_prd: "v1.3"
+  next_step: "Développeur (Frontend/Fullstack) — Initialisation App React Vite"
