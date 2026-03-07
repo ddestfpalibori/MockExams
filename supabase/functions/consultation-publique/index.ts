@@ -55,20 +55,9 @@ interface ErrorResponse {
   retry_after_seconds?: number;
 }
 
-// ─── Rate limiting global par IP (mémoire — I2 → Supabase KV) ────────────────
-
-const ipCounts = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = ipCounts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    ipCounts.set(ip, { count: 1, resetAt: now + 60_000 });
-    return true;
-  }
-  entry.count++;
-  return entry.count <= 20;
-}
+// ─── Rate limiting global par IP (DB persistée — B1) ─────────────────────────
+// check_ip_rate_limit() est atomique côté PostgreSQL :
+// INSERT ... ON CONFLICT → sûr pour runtimes serverless multi-instances.
 
 // ─── Lockout progressif (Brief §4.8.4) ───────────────────────────────────────
 
@@ -111,11 +100,6 @@ Deno.serve(async (req: Request) => {
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '0.0.0.0';
 
-  // ── 1. Rate limiting global par IP ─────────────────────────────────────────
-  if (!checkRateLimit(ip)) {
-    return errJson({ error: 'Trop de requêtes — réessayez dans une minute', code: 'RATE_LIMITED' }, 429);
-  }
-
   try {
     const { examen_id, numero_anonyme, code_acces } = (await req.json()) as ConsultationRequest;
 
@@ -125,6 +109,18 @@ Deno.serve(async (req: Request) => {
 
     const supabase = createServiceClient();
     const ipHash = (await sha256Hex(ip + (Deno.env.get('IP_HASH_SALT') ?? 'mockexams'))).slice(0, 16);
+
+    // ── 1. Rate limiting global par IP (DB persistée — 20 req/IP/min) ────────
+    // Fail-open sur erreur DB : une panne du rate limiter ne bloque pas les candidats.
+    const { data: allowed, error: rateLimitError } = await supabase.rpc('check_ip_rate_limit', {
+      p_ip_hash: ipHash,
+      p_max: 20,
+    });
+    if (rateLimitError) {
+      console.error('[consultation-publique] Rate limit DB error (fail-open):', rateLimitError);
+    } else if (!allowed) {
+      return errJson({ error: 'Trop de requêtes — réessayez dans une minute', code: 'RATE_LIMITED' }, 429);
+    }
 
     // ── 2. Vérifier lockout actif pour (examen_id, numero_anonyme, ip_hash) ─
     const { data: tentative } = await supabase

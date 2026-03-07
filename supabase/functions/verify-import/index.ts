@@ -243,6 +243,15 @@ Deno.serve(async (req: Request) => {
         console.error('[verify-import] Erreur UPSERT:', upsertError);
         return errJson({ error: 'Erreur lors de l\'enregistrement des notes', code: 'UPSERT_ERROR' }, 500);
       }
+
+      // Marquer le lot comme importé (TERMINE) — permet au tableau de bord de suivre l'avancement
+      const { error: lotUpdateError } = await supabase
+        .from('lots')
+        .update({ status: 'TERMINE' })
+        .eq('id', lot.id);
+      if (lotUpdateError) {
+        console.error('[verify-import] Erreur mise à jour status lot:', lotUpdateError);
+      }
     }
 
     const nbSuccess = lineResults.filter((r) => r.status === 'ok').length;
