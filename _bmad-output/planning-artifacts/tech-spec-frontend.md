@@ -761,6 +761,156 @@ Modale de confirmation. Variantes : `simple` (bouton OK) et `typed` (saisie text
 | Réseau offline | `NetworkBanner` — bandeau haut de page, non bloquant |
 | Note modifiée manuellement | Badge `●` + tooltip avec date/heure sur la cellule |
 
+### 11.4 Storybook — Documentation des Composants
+
+**Objectif :** Chaque composant UI documenté avec Storybook. Setup via `npx storybook@latest init`.
+
+**Structure :**
+```
+src/
+├── components/
+│   ├── ui/
+│   │   ├── Button.tsx
+│   │   ├── Button.stories.tsx    ← Baseline + variantes (size, variant, state)
+│   │   ├── Dialog.tsx
+│   │   └── Dialog.stories.tsx
+│   └── ...
+└── .storybook/
+    ├── main.ts                    ← Config Vite + addons
+    └── preview.ts                 ← Theme global, decorators
+```
+
+**Couverture obligatoire :**
+- Tous les composants du design system (`Button`, `Input`, `Select`, `Dialog`, `Badge`, etc.)
+- Variantes via CVA (size, variant, disabled, loading)
+- États (`normal`, `hover`, `active`, `disabled`, `error`)
+- Responsive (mobile/tablet/desktop si pertinent)
+- Accessibilité (ARIA, labels, etc.)
+
+**Pas de composants en production sans story.**
+
+### 11.5 Thème Dynamique (Light/Dark)
+
+**Provider global :**
+```typescript
+// src/context/ThemeContext.tsx
+interface ThemeContextType {
+  theme: 'light' | 'dark' | 'auto';
+  setTheme: (t: 'light' | 'dark' | 'auto') => void;
+}
+
+export const ThemeProvider: React.FC<{ children }> = ({ children }) => {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme-preference') || 'auto');
+
+  useEffect(() => {
+    const isDark = theme === 'dark' || (theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('theme-preference', theme);
+  }, [theme]);
+
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+};
+```
+
+**Variables CSS :**
+```css
+/* src/styles/theme.css */
+:root {
+  --color-primary: #2563eb;
+  --color-bg: #f8fafc;
+  --color-fg: #0f172a;
+  /* ... */
+}
+
+:root.dark {
+  --color-bg: #0f172a;
+  --color-fg: #f8fafc;
+  /* ... */
+}
+```
+
+**Commutateur de thème :**
+```typescript
+// Petit toggle en haut à droite du header (à côté de la déconnexion)
+export const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme();
+  return (
+    <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
+      {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+    </button>
+  );
+};
+```
+
+### 11.6 Navigation & Bouton Retour
+
+**Hook custom pour l'historique :**
+```typescript
+// src/hooks/useNavigationHistory.ts
+export function useNavigationHistory() {
+  const navigate = useNavigate();
+  const [canGoBack, setCanGoBack] = useState(false);
+
+  useEffect(() => {
+    // Vérifier si historique navigateur disponible
+    setCanGoBack(window.history.length > 1);
+  }, []);
+
+  const goBack = useCallback(() => {
+    if (canGoBack) navigate(-1);
+  }, [canGoBack, navigate]);
+
+  return { canGoBack, goBack };
+}
+```
+
+**Bouton retour unique (haut à gauche) :**
+```typescript
+// src/components/navigation/BackButton.tsx
+export const BackButton = () => {
+  const { canGoBack, goBack } = useNavigationHistory();
+
+  if (!canGoBack) return null;
+
+  return (
+    <button
+      onClick={goBack}
+      className="flex items-center gap-2 text-slate-600 hover:text-slate-900"
+      aria-label="Retour"
+    >
+      <ChevronLeft size={20} />
+      <span className="text-sm">Retour</span>
+    </button>
+  );
+};
+```
+
+**Placement dans le layout :**
+```typescript
+// src/layouts/RootLayout.tsx
+export const RootLayout = () => {
+  return (
+    <div className="min-h-screen">
+      {/* Barre de navigation fixe haut */}
+      <nav className="sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-4">
+        <BackButton />  {/* ← Flèche + "Retour" */}
+        <h1 className="flex-1">MockExams</h1>
+        <ThemeToggle />
+        <UserMenu />
+      </nav>
+
+      {/* Contenu principal */}
+      <main className="p-4">{/* routes */}</main>
+    </div>
+  );
+};
+```
+
+**Comportement :**
+- Visible sur toutes les pages sauf la page d'accueil/login
+- Clique = `navigate(-1)` (pop de la pile du navigateur)
+- Gère automatiquement les transitions React Router
+
 ---
 
 ## 12. Gestion d'Erreurs et Résilience Réseau
