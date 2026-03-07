@@ -1,24 +1,34 @@
-import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 
+const loginSchema = z.object({
+    email: z.string().email('Adresse courriel invalide'),
+    password: z.string().min(6, 'Mot de passe trop court (minimum 6 caractères)'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export const LoginPage = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        mode: 'onBlur',
+    });
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-
+    const onSubmit = async (data: LoginFormValues) => {
         try {
             const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+                email: data.email,
+                password: data.password,
             });
 
             if (error) throw error;
@@ -26,23 +36,16 @@ export const LoginPage = () => {
             // La redirection sera gérée par l'AuthLayout / RoleGuard automatiquement
             navigate('/');
         } catch (err: unknown) {
-            console.error('Erreur login:', err);
-            setError('Identifiants invalides ou problème de connexion.');
-        } finally {
-            setIsLoading(false);
+            const message =
+                err instanceof Error ? err.message : 'Identifiants invalides ou problème de connexion';
+            toast.error(message);
         }
     };
 
     return (
-        <form className="space-y-6" onSubmit={handleLogin}>
-            {error && (
-                <div className="bg-red-50 text-danger p-3 rounded-md text-sm border border-red-200">
-                    {error}
-                </div>
-            )}
-
+        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
-                <label gap-2 htmlFor="email" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
                     Adresse courriel
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
@@ -51,14 +54,19 @@ export const LoginPage = () => {
                     </div>
                     <input
                         id="email"
-                        name="email"
                         type="email"
-                        required
-                        className="block w-full pl-10 sm:text-sm border-slate-300 rounded-md focus:ring-brand-primary focus:border-brand-primary border px-3 py-2"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${
+                            errors.email
+                                ? 'border-danger bg-red-50 focus:ring-danger focus:border-danger'
+                                : 'border-slate-300 focus:ring-brand-primary focus:border-brand-primary'
+                        }`}
+                        placeholder="vous@exemple.fr"
+                        {...register('email')}
                     />
                 </div>
+                {errors.email && (
+                    <p className="mt-1 text-sm text-danger">{errors.email.message}</p>
+                )}
             </div>
 
             <div>
@@ -71,23 +79,28 @@ export const LoginPage = () => {
                     </div>
                     <input
                         id="password"
-                        name="password"
                         type="password"
-                        required
-                        className="block w-full pl-10 sm:text-sm border-slate-300 rounded-md focus:ring-brand-primary focus:border-brand-primary border px-3 py-2"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${
+                            errors.password
+                                ? 'border-danger bg-red-50 focus:ring-danger focus:border-danger'
+                                : 'border-slate-300 focus:ring-brand-primary focus:border-brand-primary'
+                        }`}
+                        placeholder="••••••••"
+                        {...register('password')}
                     />
                 </div>
+                {errors.password && (
+                    <p className="mt-1 text-sm text-danger">{errors.password.message}</p>
+                )}
             </div>
 
             <div>
                 <button
                     type="submit"
-                    disabled={isLoading}
-                    className="w-full btn-brand flex justify-center py-2.5"
+                    disabled={isSubmitting}
+                    className="w-full btn-brand flex justify-center py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Se connecter'}
+                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Se connecter'}
                 </button>
             </div>
         </form>

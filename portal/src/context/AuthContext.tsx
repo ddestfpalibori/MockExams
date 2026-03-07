@@ -2,17 +2,7 @@ import { createContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-type Role = 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle';
-
-interface AuthContextType {
-    session: Session | null;
-    user: User | null;
-    role: Role | null;
-    isLoading: boolean;
-    signOut: () => Promise<void>;
-    hasPermission: (requiredRoles: Role[]) => boolean;
-}
+import type { Role, AuthContextType } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

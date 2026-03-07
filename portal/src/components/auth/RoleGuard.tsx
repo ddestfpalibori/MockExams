@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-
-type Role = 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle';
+import type { Role } from '../../types/auth';
 
 interface RoleGuardProps {
     children: ReactNode;
@@ -28,8 +27,7 @@ export const RoleGuard = ({ children, allowedRoles }: RoleGuardProps) => {
 
     // Vérification des rôles si spécifiés
     if (allowedRoles && allowedRoles.length > 0 && !hasPermission(allowedRoles)) {
-        // Soit on redirige vers une page 403, soit vers la racine
-        return <Navigate to="/" replace />;
+        return <Navigate to="/403" replace />;
     }
 
     return <>{children}</>;
