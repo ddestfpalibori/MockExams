@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
@@ -12,34 +12,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [role, setRole] = useState<Role | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        // Session initiale
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchRole(session.user.id);
-            } else {
-                setIsLoading(false);
-            }
-        });
-
-        // Listener des changements d'auth
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            if (session?.user) {
-                fetchRole(session.user.id);
-            } else {
-                setRole(null);
-                setIsLoading(false);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const fetchRole = async (userId: string) => {
+    const fetchRole = useCallback(async (userId: string) => {
         try {
             const { data, error } = await supabase
                 .from('profiles')
@@ -55,7 +28,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // Le listener onAuthStateChange de Supabase v2 émet INITIAL_SESSION
+        // immédiatement, ce qui remplace le besoin de getSession() et évite les doubles appels.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+            if (session?.user) {
+                fetchRole(session.user.id);
+            } else {
+                setRole(null);
+                setIsLoading(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [fetchRole]);
 
     const signOut = async () => {
         await supabase.auth.signOut();

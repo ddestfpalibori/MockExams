@@ -5,8 +5,9 @@ export const RootLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // On n'affiche pas le bouton retour si on est sur la page d'accueil du Dashboard
-    const isRootPage = location.pathname === '/' || location.pathname === '/admin';
+    // On n'affiche pas le bouton retour si on est sur la page d'accueil d'un Dashboard
+    const dashboardPaths = ['/', '/admin', '/centre', '/etablissement', '/tutelle'];
+    const isRootPage = dashboardPaths.includes(location.pathname);
 
     return (
         <div className="min-h-screen flex flex-col">

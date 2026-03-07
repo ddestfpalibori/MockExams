@@ -1,15 +1,16 @@
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
 
+/**
+ * Layout pour les pages d'authentification (M4)
+ * Gère le chargement initial et la redirection des utilisateurs déjà connectés.
+ */
 export const AuthLayout = () => {
     const { session, isLoading } = useAuth();
 
     if (isLoading) {
-        return (
-            <div className="flex h-screen items-center justify-center bg-brand-subtle">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
-            </div>
-        );
+        return <LoadingSpinner fullScreen />;
     }
 
     // Si déjà connecté, on redirige vers l'application principale

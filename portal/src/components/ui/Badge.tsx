@@ -1,12 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
+import { cn } from '../../lib/utils';
 
 const badgeVariants = cva(
     "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2",

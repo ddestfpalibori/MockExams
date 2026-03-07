@@ -55,11 +55,10 @@ export const LoginPage = () => {
                     <input
                         id="email"
                         type="email"
-                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${
-                            errors.email
-                                ? 'border-danger bg-red-50 focus:ring-danger focus:border-danger'
-                                : 'border-slate-300 focus:ring-brand-primary focus:border-brand-primary'
-                        }`}
+                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${errors.email
+                            ? 'border-danger bg-red-50 focus-visible:ring-danger focus-visible:border-danger'
+                            : 'border-slate-300 focus-visible:ring-brand-primary focus-visible:border-brand-primary'
+                            }`}
                         placeholder="vous@exemple.fr"
                         {...register('email')}
                     />
@@ -80,11 +79,10 @@ export const LoginPage = () => {
                     <input
                         id="password"
                         type="password"
-                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${
-                            errors.password
-                                ? 'border-danger bg-red-50 focus:ring-danger focus:border-danger'
-                                : 'border-slate-300 focus:ring-brand-primary focus:border-brand-primary'
-                        }`}
+                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${errors.password
+                            ? 'border-danger bg-red-50 focus-visible:ring-danger focus-visible:border-danger'
+                            : 'border-slate-300 focus-visible:ring-brand-primary focus-visible:border-brand-primary'
+                            }`}
                         placeholder="••••••••"
                         {...register('password')}
                     />

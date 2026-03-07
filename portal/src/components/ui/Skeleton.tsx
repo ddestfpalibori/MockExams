@@ -1,22 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-/**
- * Utilitaire pour fusionner les classes Tailwind proprement
- */
-function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
+import { cn } from '../../lib/utils';
 
 const skeletonVariants = cva(
-    "animate-pulse bg-slate-200 dark:bg-slate-700",
+    "animate-pulse bg-slate-200",
     {
         variants: {
             variant: {
-                line: "rounded-sm h-4 w-full",
+                line: "rounded-sm w-full",
                 circle: "rounded-full aspect-square",
                 card: "rounded-lg w-full",
             },
@@ -49,7 +41,7 @@ const skeletonVariants = cva(
 
 export interface SkeletonProps
     extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof skeletonVariants> {}
+    VariantProps<typeof skeletonVariants> { }
 
 const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
     ({ className, variant, size, ...props }, ref) => {
@@ -57,6 +49,9 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
             <div
                 className={cn(skeletonVariants({ variant, size, className }))}
                 ref={ref}
+                aria-busy="true"
+                role="status"
+                aria-label="Chargement en cours..."
                 {...props}
             />
         );
@@ -65,3 +60,4 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
 Skeleton.displayName = "Skeleton";
 
 export { Skeleton, skeletonVariants };
+
