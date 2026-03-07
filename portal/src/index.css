@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Le thème par défaut "Slate/Bleu" de l'Institution DDEST-FP */
+    --brand-primary: #1e40af; /* blue-800 */
+    --brand-secondary: #0f172a; /* slate-900 */
+    --brand-subtle: #f8fafc; /* slate-50 */
+    
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--brand-subtle);
+    color: var(--brand-secondary);
+  }
+}
+
+@layer utilities {
+  .text-brand-primary { color: var(--brand-primary); }
+  .bg-brand-primary { background-color: var(--brand-primary); }
+  .btn-brand {
+    @apply bg-brand-primary text-white hover:opacity-90 transition-opacity px-4 py-2 rounded-md font-medium;
+  }
+}
