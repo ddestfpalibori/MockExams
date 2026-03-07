@@ -124,7 +124,8 @@ BEGIN
     INSERT INTO candidats (
       id, examen_id, etablissement_id, serie_id,
       nom_enc, prenom_enc,
-      centre_id, salle_id, numero_table, numero_anonyme
+      centre_id, salle_id, numero_table, numero_anonyme,
+      candidat_fingerprint
     ) VALUES (
       v_candidat,
       v_examen_id,
@@ -135,13 +136,15 @@ BEGIN
       'placeholder_prenom_' || i,
       v_centre_id,
       CASE
-        WHEN i <=  50 THEN '66666666-0000-0000-0000-000000000001'
-        WHEN i <= 100 THEN '66666666-0000-0000-0000-000000000002'
-        WHEN i <= 150 THEN '66666666-0000-0000-0000-000000000003'
-        ELSE               '66666666-0000-0000-0000-000000000004'
+        WHEN i <=  50 THEN '66666666-0000-0000-0000-000000000001'::uuid
+        WHEN i <= 100 THEN '66666666-0000-0000-0000-000000000002'::uuid
+        WHEN i <= 150 THEN '66666666-0000-0000-0000-000000000003'::uuid
+        ELSE               '66666666-0000-0000-0000-000000000004'::uuid
       END,
-      ((i - 1) % 50) + 1,
-      LPAD(i::text, 4, '0')   -- N° anonyme : 0001..0200
+      i,                         -- numero_table unique dans le centre (1..200)
+      LPAD(i::text, 4, '0'),   -- N° anonyme : 0001..0200
+      -- Fingerprint fictif unique (seed seulement — normalement HMAC-SHA256 côté app)
+      md5('seed-candidat-' || i)
     );
   END LOOP;
 END $$;

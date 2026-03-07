@@ -76,7 +76,7 @@ CREATE TRIGGER trg_check_inapte_eps
 
 CREATE OR REPLACE FUNCTION calculer_moyenne_candidat(
   p_candidat_id  uuid,
-  p_phase        smallint  -- 1 ou 2
+  p_phase        integer  -- 1 ou 2
 )
 RETURNS integer   -- centièmes, ou NULL si données incomplètes
 LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -799,7 +799,7 @@ $$;
 --   service_role   → Edge Functions (hors RLS, contournement intentionnel)
 -- Les correcteurs n'ont pas de compte Supabase → jamais d'accès direct.
 
-REVOKE EXECUTE ON FUNCTION calculer_moyenne_candidat(uuid, smallint)              FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION calculer_moyenne_candidat(uuid, integer)              FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION deliberer_candidat(uuid, uuid)                         FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION deliberer_examen(uuid, uuid)                           FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION affecter_candidats_salles(uuid, uuid)                  FROM PUBLIC;
@@ -807,7 +807,7 @@ REVOKE EXECUTE ON FUNCTION generer_anonymats_centre(uuid, uuid)                 
 REVOKE EXECUTE ON FUNCTION creer_lots_centre(uuid, uuid, uuid, uuid)              FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION compter_notes_manquantes(uuid)                         FROM PUBLIC;
 
-GRANT EXECUTE ON FUNCTION calculer_moyenne_candidat(uuid, smallint)              TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION calculer_moyenne_candidat(uuid, integer)              TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION deliberer_candidat(uuid, uuid)                         TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION deliberer_examen(uuid, uuid)                           TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION affecter_candidats_salles(uuid, uuid)                  TO authenticated, service_role;
