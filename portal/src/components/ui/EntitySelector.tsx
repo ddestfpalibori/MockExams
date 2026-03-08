@@ -1,8 +1,6 @@
-interface Entity {
-    id: string;
-    nom: string;
-    code: string;
-}
+import type { CentreRow, EtablissementRow } from '@/types/domain';
+
+type Entity = CentreRow | EtablissementRow;
 
 interface EntitySelectorProps {
     entities: Entity[];
@@ -14,6 +12,8 @@ interface EntitySelectorProps {
 /**
  * Sélecteur d'entité active (centre ou établissement).
  * Visible uniquement quand l'utilisateur est rattaché à plusieurs entités.
+ *
+ * Ne rend rien si 0 ou 1 seule entité (selector inutile si choix unique).
  */
 export function EntitySelector({ entities, activeId, onSelect, label }: EntitySelectorProps) {
     if (entities.length <= 1) return null;

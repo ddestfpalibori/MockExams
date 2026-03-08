@@ -1,0 +1,24 @@
+﻿
+> portal@0.0.0 lint
+> eslint .
+
+
+C:\Users\HP ELITEBOOK\DEV\MockExams\portal\src\components\ui\FormField.tsx
+   1:29  error  'ReactNode' is defined but never used                                                                                           @typescript-eslint/no-unused-vars
+  59:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+  67:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\HP ELITEBOOK\DEV\MockExams\portal\src\components\ui\Modal.tsx
+  5:10  error  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\HP ELITEBOOK\DEV\MockExams\portal\src\pages\admin\ExamenDetailPage.tsx
+  39:18  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\HP ELITEBOOK\DEV\MockExams\portal\src\services\candidats.ts
+  51:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\HP ELITEBOOK\DEV\MockExams\portal\src\services\centres.ts
+  43:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+Ô£û 7 problems (7 errors, 0 warnings)
+

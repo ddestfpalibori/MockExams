@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useActiveEtablissement } from '@/hooks/useActiveEtablissement';
 import { useEtablissementStats } from '@/hooks/queries/useEtablissements';
+import { QUERY_KEYS } from '@/lib/constants/queryKeys';
 import { EntitySelector } from '@/components/ui/EntitySelector';
 import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -12,8 +15,16 @@ import type { ExamenRow } from '@/types/domain';
 
 export default function EtablissementDashboard() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { activeId: etablissementId, etablissements, isMulti, setActiveId } = useActiveEtablissement();
     const activeEtablissement = etablissements.find((e) => e.id === etablissementId) ?? etablissements[0];
+
+    // Invalider les stats quand l'établissement change (force un refetch)
+    useEffect(() => {
+        if (etablissementId) {
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.etablissements.stats(etablissementId) });
+        }
+    }, [etablissementId, queryClient]);
 
     const { data: stats, isLoading: statsLoading } = useEtablissementStats(etablissementId);
     const { data: examens, isLoading: examensLoading } = useExamens();

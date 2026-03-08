@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useCentreStats } from '@/hooks/queries/useLots';
+import { QUERY_KEYS } from '@/lib/constants/queryKeys';
 import { EntitySelector } from '@/components/ui/EntitySelector';
 import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -12,8 +15,16 @@ import type { ExamenRow } from '@/types/domain';
 
 export default function CentreDashboard() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
     const activeCentre = centres.find((c) => c.id === centreId) ?? centres[0];
+
+    // Invalider les stats quand le centre change (force un refetch)
+    useEffect(() => {
+        if (centreId) {
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.centres.stats(centreId) });
+        }
+    }, [centreId, queryClient]);
 
     const { data: stats, isLoading: statsLoading } = useCentreStats(centreId);
     const { data: examens, isLoading: examensLoading } = useExamens();
