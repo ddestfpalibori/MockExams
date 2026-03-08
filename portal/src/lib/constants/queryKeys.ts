@@ -8,6 +8,9 @@ export const QUERY_KEYS = {
         list: () => ['examens', 'list'] as const,
         detail: (id: string) => ['examens', 'detail', id] as const,
         stats: () => ['examens', 'stats'] as const,
+        detailStats: (id: string) => ['examens', 'detailStats', id] as const,
+        disciplines: (id: string) => ['examens', 'disciplines', id] as const,
+        centres: (id: string) => ['examens', 'centres', id] as const,
     },
     candidats: {
         all: ['candidats'] as const,
@@ -39,5 +42,11 @@ export const QUERY_KEYS = {
     resultats: {
         all: ['resultats'] as const,
         list: (examenId: string) => ['resultats', 'list', examenId] as const,
+    },
+    disciplines: {
+        all: ['disciplines'] as const,
+    },
+    series: {
+        all: ['series'] as const,
     },
 } as const;

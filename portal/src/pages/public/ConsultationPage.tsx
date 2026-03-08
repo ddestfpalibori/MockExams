@@ -6,21 +6,27 @@ import { Search, AlertCircle, Lock } from 'lucide-react';
 import type { ResultatStatus } from '@/types/domain';
 
 interface ConsultationResult {
-    moyenne_centimes: number;
+    moyenne_centimes: number | null;
     phase: number;
     status: ResultatStatus;
 }
 
 interface ConsultationResponse {
-    resultat: ConsultationResult | null;
-    lockout_until?: string | null;
+    candidat: {
+        numero_anonyme: string;
+        serie: string;
+        etablissement: string;
+    };
+    resultat: ConsultationResult;
 }
 
 export default function ConsultationPage() {
     const [examenCode, setExamenCode] = useState('');
     const [numeroAnonyme, setNumeroAnonyme] = useState('');
+    const [codeAcces, setCodeAcces] = useState('');
     const [searching, setSearching] = useState(false);
     const [result, setResult] = useState<ConsultationResult | null | 'not_found'>(null);
+    const [candidatInfo, setCandidatInfo] = useState<ConsultationResponse['candidat'] | null>(null);
     const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,43 +34,50 @@ export default function ConsultationPage() {
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!examenCode.trim() || !numeroAnonyme.trim() || isLocked) return;
+        if (!examenCode.trim() || !numeroAnonyme.trim() || !codeAcces.trim() || isLocked) return;
 
         setSearching(true);
         setResult(null);
+        setCandidatInfo(null);
         setError(null);
 
         try {
-            // Appel via Edge Function consultation-publique
-            // (recherche_resultat_public est service_role only — ne pas appeler RPC directement)
             const { data, error: fnError } = await supabase.functions.invoke<ConsultationResponse>(
                 'consultation-publique',
                 {
                     body: {
                         examen_code: examenCode.trim().toUpperCase(),
                         numero_anonyme: numeroAnonyme.trim().toUpperCase(),
+                        code_acces: codeAcces.trim(),
                     },
                 }
             );
 
             if (fnError) {
-                // 429 = lockout
-                if (fnError.message?.includes('429') || fnError.message?.includes('lockout')) {
-                    setLockoutUntil(new Date(Date.now() + 5 * 60 * 1000)); // 5 min
-                    setError('Trop de tentatives. Réessayez dans 5 minutes.');
+                // 403 = lockout, 429 = rate limit
+                const status = (fnError as { status?: number }).status;
+                if (status === 403) {
+                    // Lire retry_after_seconds depuis le corps de l'erreur si disponible
+                    setLockoutUntil(new Date(Date.now() + 60 * 60 * 1000)); // fallback 1h
+                    setError('Trop de tentatives. Accès temporairement verrouillé.');
+                } else if (status === 429) {
+                    setLockoutUntil(new Date(Date.now() + 60 * 1000)); // 1 min
+                    setError('Trop de requêtes. Réessayez dans une minute.');
+                } else if (status === 404) {
+                    setResult('not_found');
                 } else {
                     setError('Une erreur est survenue. Veuillez réessayer.');
                 }
                 return;
             }
 
-            if (data?.lockout_until) {
-                setLockoutUntil(new Date(data.lockout_until));
-                setError('Trop de tentatives. Accès temporairement verrouillé.');
+            if (!data) {
+                setResult('not_found');
                 return;
             }
 
-            setResult(data?.resultat ?? 'not_found');
+            setCandidatInfo(data.candidat);
+            setResult(data.resultat);
         } catch {
             setError('Une erreur de connexion est survenue. Vérifiez votre connexion internet.');
         } finally {
@@ -74,8 +87,10 @@ export default function ConsultationPage() {
 
     const reset = () => {
         setResult(null);
+        setCandidatInfo(null);
         setError(null);
         setNumeroAnonyme('');
+        setCodeAcces('');
     };
 
     return (
@@ -141,6 +156,22 @@ export default function ConsultationPage() {
                                 />
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                    Code d'accès
+                                </label>
+                                <input
+                                    type="text"
+                                    value={codeAcces}
+                                    onChange={(e) => setCodeAcces(e.target.value)}
+                                    placeholder="Code reçu sur votre souche"
+                                    className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                                    required
+                                    disabled={!!isLocked}
+                                    autoComplete="off"
+                                />
+                            </div>
+
                             {error && (
                                 <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 p-3">
                                     {isLocked ? (
@@ -156,7 +187,7 @@ export default function ConsultationPage() {
                                 type="submit"
                                 className="w-full"
                                 isLoading={searching}
-                                disabled={!!isLocked || !examenCode.trim() || !numeroAnonyme.trim()}
+                                disabled={!!isLocked || !examenCode.trim() || !numeroAnonyme.trim() || !codeAcces.trim()}
                             >
                                 <Search className="mr-2 h-4 w-4" />
                                 Consulter mon résultat
@@ -168,17 +199,31 @@ export default function ConsultationPage() {
                     {result && result !== 'not_found' && (
                         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
                             <div className="text-center">
-                                <p className="text-sm text-slate-500 mb-1">Numéro : {numeroAnonyme}</p>
+                                <p className="text-sm text-slate-500 mb-1">Numéro : {candidatInfo?.numero_anonyme ?? numeroAnonyme}</p>
                                 <div className="flex justify-center">
                                     <ResultatStatusBadge status={result.status} />
                                 </div>
                             </div>
 
                             <div className="border-t border-slate-100 pt-4 space-y-3">
+                                {candidatInfo && (
+                                    <>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Série</span>
+                                            <span className="text-slate-700">{candidatInfo.serie}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-slate-500">Établissement</span>
+                                            <span className="text-slate-700 text-right max-w-[60%]">{candidatInfo.etablissement}</span>
+                                        </div>
+                                    </>
+                                )}
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500">Moyenne générale</span>
                                     <span className="font-mono font-semibold text-slate-900">
-                                        {(result.moyenne_centimes / 100).toFixed(2)} / 20
+                                        {result.moyenne_centimes != null
+                                            ? `${(result.moyenne_centimes / 100).toFixed(2)} / 20`
+                                            : '—'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between text-sm">

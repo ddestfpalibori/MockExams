@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { examenService, type CreateExamenInput, type UpdateExamenInput } from '@/services/examens';
+import { examenService, type CreateExamenInput, type UpdateExamenInput, type AddDisciplineInput } from '@/services/examens';
 import { QUERY_KEYS } from '@/lib/constants/queryKeys';
 import { CACHE_STRATEGY } from '@/lib/constants/cacheStrategy';
 import { toast } from 'sonner';
@@ -34,7 +34,37 @@ export function useExamenStats() {
     });
 }
 
-/** Mutations */
+/** Stats rapides pour un examen donné (candidats, centres, disciplines) */
+export function useExamenDetailStats(examenId: string) {
+    return useQuery({
+        queryKey: QUERY_KEYS.examens.detailStats(examenId),
+        queryFn: () => examenService.fetchExamenDetailStats(examenId),
+        enabled: !!examenId,
+        ...CACHE_STRATEGY.frequente,
+    });
+}
+
+/** Disciplines associées à un examen */
+export function useExamenDisciplines(examenId: string) {
+    return useQuery({
+        queryKey: QUERY_KEYS.examens.disciplines(examenId),
+        queryFn: () => examenService.fetchExamenDisciplines(examenId),
+        enabled: !!examenId,
+        ...CACHE_STRATEGY.standard,
+    });
+}
+
+/** Centres associés à un examen */
+export function useExamenCentres(examenId: string) {
+    return useQuery({
+        queryKey: QUERY_KEYS.examens.centres(examenId),
+        queryFn: () => examenService.fetchExamenCentres(examenId),
+        enabled: !!examenId,
+        ...CACHE_STRATEGY.standard,
+    });
+}
+
+// ── Mutations ─────────────────────────────────────────────────────────────────
 
 export function useCreateExamen() {
     const queryClient = useQueryClient();
@@ -73,6 +103,7 @@ export function useTransitionPhase(id: string) {
         },
     });
 }
+
 export function useDeliberation(id: string) {
     const queryClient = useQueryClient();
 
@@ -82,6 +113,58 @@ export function useDeliberation(id: string) {
             queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.detail(id) });
             queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.list() });
             toast.success('Délibération effectuée');
+        },
+    });
+}
+
+export function useAddExamenDiscipline(examenId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (input: AddDisciplineInput) => examenService.addExamenDiscipline(input),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.disciplines(examenId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.detailStats(examenId) });
+            toast.success('Discipline ajoutée');
+        },
+    });
+}
+
+export function useRemoveExamenDiscipline(examenId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (disciplineId: string) => examenService.removeExamenDiscipline(disciplineId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.disciplines(examenId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.detailStats(examenId) });
+            toast.success('Discipline retirée');
+        },
+    });
+}
+
+export function useAddExamenCentre(examenId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (centreId: string) => examenService.addExamenCentre(examenId, centreId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.centres(examenId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.detailStats(examenId) });
+            toast.success('Centre associé');
+        },
+    });
+}
+
+export function useRemoveExamenCentre(examenId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (centreId: string) => examenService.removeExamenCentre(examenId, centreId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.centres(examenId) });
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.examens.detailStats(examenId) });
+            toast.success('Centre dissocié');
         },
     });
 }

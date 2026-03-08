@@ -18,6 +18,8 @@ const ConsultationPage = lazy(() => import('./pages/public/ConsultationPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const ExamensPage = lazy(() => import('./pages/admin/ExamensPage'));
 const ExamenDetailPage = lazy(() => import('./pages/admin/ExamenDetailPage'));
+const ExamenFormPage = lazy(() => import('./pages/admin/ExamenFormPage'));
+const UtilisateursPage = lazy(() => import('./pages/admin/UtilisateursPage'));
 
 // Chef Centre
 const CentreDashboard = lazy(() => import('./pages/centre/CentreDashboard'));
@@ -125,9 +127,10 @@ function App() {
                                             <Routes>
                                                 <Route index element={<AdminDashboard />} />
                                                 <Route path="examens" element={<ExamensPage />} />
-                                                <Route path="examens/nouveau" element={<div className="p-6 text-slate-500">Formulaire Examen — à venir (P3.4)</div>} />
+                                                <Route path="examens/nouveau" element={<ExamenFormPage />} />
+                                                <Route path="examens/:id/edit" element={<ExamenFormPage />} />
                                                 <Route path="examens/:id" element={<ExamenDetailPage />} />
-                                                <Route path="utilisateurs" element={<div className="p-6 text-slate-500">Gestion utilisateurs — à venir (P3.5)</div>} />
+                                                <Route path="utilisateurs" element={<UtilisateursPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>

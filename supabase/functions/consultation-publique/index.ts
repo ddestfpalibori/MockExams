@@ -28,7 +28,8 @@ import { createServiceClient } from '../_shared/auth.ts';
 // ─── Contrat API ──────────────────────────────────────────────────────────────
 
 interface ConsultationRequest {
-  examen_id: string;
+  /** Code lisible de l'examen (ex: BAC2024) — résolu en UUID côté serveur */
+  examen_code: string;
   /** Numéro sur la souche de l'élève (= candidats.numero_anonyme) */
   numero_anonyme: string;
   /** Code brut reçu par l'élève (8 caractères alphanumériques) */
@@ -101,9 +102,9 @@ Deno.serve(async (req: Request) => {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? '0.0.0.0';
 
   try {
-    const { examen_id, numero_anonyme, code_acces } = (await req.json()) as ConsultationRequest;
+    const { examen_code, numero_anonyme, code_acces } = (await req.json()) as ConsultationRequest;
 
-    if (!examen_id || !numero_anonyme || !code_acces) {
+    if (!examen_code || !numero_anonyme || !code_acces) {
       return errJson({ error: 'Champs requis manquants', code: 'VALIDATION_ERROR' }, 400);
     }
 
@@ -122,7 +123,20 @@ Deno.serve(async (req: Request) => {
       return errJson({ error: 'Trop de requêtes — réessayez dans une minute', code: 'RATE_LIMITED' }, 429);
     }
 
-    // ── 2. Vérifier lockout actif pour (examen_id, numero_anonyme, ip_hash) ─
+    // ── 2. Résoudre examen_code → examen_id + vérifier que l'examen est publié
+    const { data: examen } = await supabase
+      .from('examens')
+      .select('id, status')
+      .eq('code', examen_code.toUpperCase())
+      .maybeSingle();
+
+    if (!examen || examen.status !== 'PUBLIE') {
+      return errJson({ error: 'Résultats non encore publiés', code: 'RESULTS_NOT_PUBLISHED' }, 404);
+    }
+
+    const examen_id = examen.id;
+
+    // ── 3. Vérifier lockout actif pour (examen_id, numero_anonyme, ip_hash) ─
     const { data: tentative } = await supabase
       .from('consultation_tentatives')
       .select('id, tentatives, lockout_until')
@@ -138,17 +152,6 @@ Deno.serve(async (req: Request) => {
         code: 'LOCKED_OUT',
         retry_after_seconds: retryAfter,
       }, 403);
-    }
-
-    // ── 3. Vérifier que l'examen est publié ────────────────────────────────
-    const { data: examen } = await supabase
-      .from('examens')
-      .select('status')
-      .eq('id', examen_id)
-      .single();
-
-    if (!examen || examen.status !== 'PUBLIE') {
-      return errJson({ error: 'Résultats non encore publiés', code: 'RESULTS_NOT_PUBLISHED' }, 404);
     }
 
     // ── 4. Résoudre candidat_id via numero_anonyme ─────────────────────────

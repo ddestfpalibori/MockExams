@@ -27,6 +27,7 @@ interface CreateUserRequest {
   role: 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle';
   nom: string;
   prenom: string;
+  telephone?: string;
 }
 
 interface UpdateUserRequest {
@@ -69,7 +70,7 @@ Deno.serve(async (req: Request) => {
 
     // ── Action : créer un utilisateur ───────────────────────────────────────
     if (body.action === 'create') {
-      const { email, password, role: userRole, nom, prenom } = body;
+      const { email, password, role: userRole, nom, prenom, telephone } = body;
 
       if (!email || !password || !userRole || !nom || !prenom) {
         return errJson({ error: 'Champs requis : email, password, role, nom, prenom', code: 'BAD_REQUEST' }, 400);
@@ -109,6 +110,7 @@ Deno.serve(async (req: Request) => {
           nom,
           prenom,
           role: userRole,
+          ...(telephone ? { telephone } : {}),
         });
 
       if (profileError) {

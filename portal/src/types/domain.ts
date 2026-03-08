@@ -10,6 +10,7 @@ export type LotStatus = Database['public']['Enums']['lot_status'];
 export type ResultatStatus = Database['public']['Enums']['resultat_status'];
 export type UserRole = Database['public']['Enums']['user_role'];
 export type AffectationRule = Database['public']['Enums']['affectation_rule'];
+export type DisciplineType = Database['public']['Enums']['discipline_type'];
 
 /** Colonnes candidats non-sensibles (sans PII chiffrées) */
 export interface CandidatRow {
@@ -27,15 +28,32 @@ export interface ExamenRow {
     libelle: string;
     annee: number;
     status: ExamStatus;
+
+    // Paramètres délibération
     mode_deliberation: Database['public']['Enums']['deliberation_mode'];
     seuil_phase1: number;
-    seuil_phase2: number | null;
-    seuil_rattrapage: number | null;
+    seuil_phase2: number;
+    seuil_rattrapage: number | null; // nullable — NULL = fallback automatique (seuil_phase2 - 2 pts)
     oral_actif: boolean;
     eps_active: boolean;
     facultatif_actif: boolean;
     rattrapage_actif: boolean;
+
+    // Paramètres anonymat & composition
+    anonymat_prefixe: string;
+    anonymat_debut: number;
+    anonymat_bon: number;
+    taille_salle_ref: number;
+    distribution_model: Database['public']['Enums']['distribution_model'];
+    hmac_window_days: number;
+    date_composition_debut: string | null;
+    date_composition_fin: string | null;
+    date_deliberation: string | null;
+    date_publication: string | null;
+
+    created_by: string | null;
     created_at: string;
+    updated_at: string;
 }
 
 export interface ExamenStats {
@@ -99,6 +117,46 @@ export interface LotRow {
     generation_timestamp: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface DisciplineRow {
+    id: string;
+    code: string;
+    libelle: string;
+    type_defaut: DisciplineType;
+    created_at: string;
+}
+
+export interface SerieRow {
+    id: string;
+    code: string;
+    libelle: string;
+    ordre: number;
+    created_at: string;
+}
+
+/** examen_disciplines avec jointure discipline */
+export interface ExamenDisciplineDetail {
+    id: string;
+    examen_id: string;
+    discipline_id: string;
+    type: DisciplineType;
+    coefficient: number;
+    bareme: number;
+    ordre_affichage: number;
+    seuil_facultatif: number | null;
+    discipline: {
+        id: string;
+        code: string;
+        libelle: string;
+    };
+}
+
+/** Statistiques rapides d'un examen (counts temps réel) */
+export interface ExamenDetailStats {
+    nb_candidats: number;
+    nb_centres: number;
+    nb_disciplines: number;
 }
 
 export interface ImportLogRow {

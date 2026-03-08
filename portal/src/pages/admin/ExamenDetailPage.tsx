@@ -1,97 +1,153 @@
-import { useParams } from 'react-router-dom';
-import { useExamenDetail, useTransitionPhase } from '@/hooks/queries/useExamens';
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import type { ExamenRow } from '@/types/domain';
+import {
+    useExamenDetail,
+    useExamenDetailStats,
+    useTransitionPhase,
+} from '@/hooks/queries/useExamens';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { StatCard } from '@/components/ui/StatCard';
 import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ExamenTabDisciplines } from './ExamenTabDisciplines';
+import { ExamenTabCentres } from './ExamenTabCentres';
+import { cn } from '@/lib/utils';
 import {
     Settings,
     Users,
     School,
     BookOpen,
-    Calculator,
     Play,
     CheckCircle2,
     Lock,
     PenLine,
-    History
+    Edit,
 } from 'lucide-react';
-import { useState } from 'react';
 import type { ExamStatus } from '@/types/domain';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type TabId = 'resume' | 'disciplines' | 'centres';
+
+interface Tab {
+    id: TabId;
+    label: string;
+    icon: React.ReactNode;
+}
+
+// ── Constantes ────────────────────────────────────────────────────────────────
+
+const TABS: Tab[] = [
+    { id: 'resume', label: 'Résumé', icon: <Settings className="h-4 w-4" /> },
+    { id: 'disciplines', label: 'Disciplines', icon: <BookOpen className="h-4 w-4" /> },
+    { id: 'centres', label: 'Centres', icon: <School className="h-4 w-4" /> },
+];
+
+// Libellés lisibles pour les valeurs d'enum
+const DELIB_MODE_LABELS: Record<string, string> = {
+    unique: 'Phase unique',
+    deux_phases: 'Deux phases',
+};
+
+const PHASE_LABELS: Record<ExamStatus, string> = {
+    CONFIG: 'Configuration',
+    INSCRIPTIONS: 'Inscriptions ouvertes',
+    COMPOSITION: 'Composition',
+    CORRECTION: 'Correction',
+    DELIBERATION: 'Délibération',
+    DELIBERE: 'Délibéré',
+    CORRECTION_POST_DELIBERATION: 'Correction post-délibération',
+    PUBLIE: 'Résultats publiés',
+    CLOS: 'Examen clos',
+};
+
+// ── Composant ─────────────────────────────────────────────────────────────────
 
 export default function ExamenDetailPage() {
     const { id } = useParams<{ id: string }>();
-    const [isTransitionModalOpen, setIsTransitionModalOpen] = useState(false);
-    const [targetPhase, setTargetPhase] = useState<ExamStatus | null>(null);
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState<TabId>('resume');
+    const [transitionTarget, setTransitionTarget] = useState<ExamStatus | null>(null);
 
     const { data: examen, isLoading } = useExamenDetail(id!);
+    const { data: stats, isLoading: statsLoading } = useExamenDetailStats(id!);
     const transitionMutation = useTransitionPhase(id!);
 
-    if (isLoading) return <div className="flex h-64 items-center justify-center"><LoadingSpinner size="lg" /></div>;
-    if (!examen) return <div className="p-6 text-slate-500">Examen non trouvé.</div>;
+    if (isLoading) {
+        return <div className="flex h-64 items-center justify-center"><LoadingSpinner size="lg" /></div>;
+    }
+    if (!examen) {
+        return <div className="p-6 text-slate-500">Examen non trouvé.</div>;
+    }
+
+    const isConfig = examen.status === 'CONFIG';
 
     const handleTransition = async () => {
-        if (!targetPhase) return;
+        if (!transitionTarget) return;
         try {
-            await transitionMutation.mutateAsync(targetPhase);
-            setIsTransitionModalOpen(false);
+            await transitionMutation.mutateAsync(transitionTarget);
+            setTransitionTarget(null);
         } catch {
-            // Erreur gérée par le MutationCache (toast global)
+            // Erreur capturée par le MutationCache (toast global)
         }
-    };
-
-    const openTransitionModal = (phase: ExamStatus) => {
-        setTargetPhase(phase);
-        setIsTransitionModalOpen(true);
     };
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Header */}
+
+            {/* ── En-tête ─────────────────────────────────────────────────── */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-slate-200 pb-6">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold text-slate-900">{examen.libelle}</h1>
-                            <StatusBadge status={examen.status} />
-                        </div>
-                        <p className="text-slate-500 text-sm">Session {examen.annee} — {examen.code}</p>
+                <div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-2xl font-bold text-slate-900">{examen.libelle}</h1>
+                        <StatusBadge status={examen.status} />
                     </div>
+                    <p className="text-slate-500 text-sm mt-0.5">
+                        Session {examen.annee} — <span className="font-mono">{examen.code}</span>
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {isConfig && (
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/admin/examens/${id}/edit`)}>
+                            <Edit className="mr-1.5 h-3.5 w-3.5" />
+                            Modifier
+                        </Button>
+                    )}
                     {examen.status === 'CONFIG' && (
-                        <Button onClick={() => openTransitionModal('INSCRIPTIONS')}>
+                        <Button onClick={() => setTransitionTarget('INSCRIPTIONS')}>
                             <Play className="mr-2 h-4 w-4" />
                             Ouvrir Inscriptions
                         </Button>
                     )}
                     {examen.status === 'INSCRIPTIONS' && (
-                        <Button onClick={() => openTransitionModal('COMPOSITION')}>
+                        <Button onClick={() => setTransitionTarget('COMPOSITION')}>
                             <Lock className="mr-2 h-4 w-4" />
                             Lancer Composition
                         </Button>
                     )}
                     {examen.status === 'COMPOSITION' && (
-                        <Button onClick={() => openTransitionModal('CORRECTION')}>
+                        <Button onClick={() => setTransitionTarget('CORRECTION')}>
                             <PenLine className="mr-2 h-4 w-4" />
                             Démarrer Correction
                         </Button>
                     )}
                     {examen.status === 'CORRECTION' && (
-                        <Button onClick={() => openTransitionModal('DELIBERATION')}>
+                        <Button onClick={() => setTransitionTarget('DELIBERATION')}>
                             <BookOpen className="mr-2 h-4 w-4" />
                             Lancer Délibération
                         </Button>
                     )}
                     {examen.status === 'DELIBERATION' && (
-                        <Button variant="success" onClick={() => openTransitionModal('DELIBERE')}>
+                        <Button variant="success" onClick={() => setTransitionTarget('DELIBERE')}>
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Valider Délibération
                         </Button>
                     )}
                     {examen.status === 'DELIBERE' && (
-                        <Button variant="primary" onClick={() => openTransitionModal('PUBLIE')}>
+                        <Button onClick={() => setTransitionTarget('PUBLIE')}>
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Publier Résultats
                         </Button>
@@ -99,95 +155,75 @@ export default function ExamenDetailPage() {
                 </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary">
-                        <Users className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-slate-500">Candidats</p>
-                        <p className="text-2xl font-bold text-slate-900">--</p>
-                    </div>
+            {/* ── Stats rapides ────────────────────────────────────────────── */}
+            <div className="grid gap-4 md:grid-cols-3">
+                <StatCard
+                    title="Candidats inscrits"
+                    value={stats?.nb_candidats ?? 0}
+                    icon={<Users className="h-4 w-4" />}
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Centres associés"
+                    value={stats?.nb_centres ?? 0}
+                    icon={<School className="h-4 w-4" />}
+                    variant="warning"
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Disciplines configurées"
+                    value={stats?.nb_disciplines ?? 0}
+                    icon={<BookOpen className="h-4 w-4" />}
+                    variant="success"
+                    isLoading={statsLoading}
+                />
+            </div>
+
+            {/* ── Onglets ──────────────────────────────────────────────────── */}
+            <div className="space-y-4">
+                {/* Barre de navigation */}
+                <div className="flex gap-1 border-b border-slate-200">
+                    {TABS.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
+                                activeTab === tab.id
+                                    ? 'border-brand-primary text-brand-primary'
+                                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300',
+                            )}
+                        >
+                            {tab.icon}
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-warning/10 flex items-center justify-center text-warning">
-                        <School className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-slate-500">Centres</p>
-                        <p className="text-2xl font-bold text-slate-900">--</p>
-                    </div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center text-success">
-                        <Calculator className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-medium text-slate-500">Moyenne Générale</p>
-                        <p className="text-2xl font-bold text-slate-900">--</p>
-                    </div>
+
+                {/* Contenu */}
+                <div className="rounded-lg border border-slate-200 bg-white shadow-sm p-6">
+                    {activeTab === 'resume' && (
+                        <ResumeTab examen={examen} />
+                    )}
+                    {activeTab === 'disciplines' && (
+                        <ExamenTabDisciplines examenId={id!} isEditable={isConfig} />
+                    )}
+                    {activeTab === 'centres' && (
+                        <ExamenTabCentres examenId={id!} isEditable={isConfig} />
+                    )}
                 </div>
             </div>
 
-            {/* Contenu */}
-            <div className="grid gap-6 lg:grid-cols-4">
-                <nav className="space-y-1">
-                    <Button variant="ghost" className="w-full justify-start font-semibold bg-slate-100">
-                        <Settings className="mr-3 h-4 w-4" /> Résumé
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-slate-500">
-                        <BookOpen className="mr-3 h-4 w-4" /> Disciplines
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-slate-500">
-                        <Users className="mr-3 h-4 w-4" /> Candidats
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-slate-500">
-                        <History className="mr-3 h-4 w-4" /> Audit Log
-                    </Button>
-                </nav>
-
-                <div className="lg:col-span-3 space-y-6">
-                    <div className="rounded-lg border border-slate-200 p-6 bg-white shadow-sm">
-                        <h3 className="text-lg font-semibold mb-4 border-b border-slate-100 pb-2 text-slate-900">
-                            Paramètres de Délibération
-                        </h3>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <p className="text-sm text-slate-500">Mode de Délibération</p>
-                                <p className="font-medium text-slate-800">{examen.mode_deliberation}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-slate-500">Seuil Admissibilité</p>
-                                <p className="font-medium text-slate-800">{examen.seuil_phase1} / 20</p>
-                            </div>
-                            {examen.seuil_phase2 !== null && (
-                                <div>
-                                    <p className="text-sm text-slate-500">Seuil Phase 2</p>
-                                    <p className="font-medium text-slate-800">{examen.seuil_phase2} / 20</p>
-                                </div>
-                            )}
-                            {examen.seuil_rattrapage !== null && (
-                                <div>
-                                    <p className="text-sm text-slate-500">Seuil Rattrapage</p>
-                                    <p className="font-medium text-slate-800">{examen.seuil_rattrapage} / 20</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Transition Modal */}
+            {/* ── Modal transition de phase ────────────────────────────────── */}
             <Modal
-                open={isTransitionModalOpen}
-                onOpenChange={setIsTransitionModalOpen}
+                open={!!transitionTarget}
+                onOpenChange={(o) => { if (!o) setTransitionTarget(null); }}
                 title="Confirmer le changement de phase"
-                description={`Cette action est irréversible. L'examen passera en phase "${targetPhase}".`}
+                description={`L'examen passera en phase « ${transitionTarget ? PHASE_LABELS[transitionTarget] : ''} ». Cette action est irréversible.`}
                 variant="danger"
                 footer={
-                    <>
-                        <Button variant="ghost" onClick={() => setIsTransitionModalOpen(false)}>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setTransitionTarget(null)}>
                             Annuler
                         </Button>
                         <Button
@@ -197,14 +233,51 @@ export default function ExamenDetailPage() {
                         >
                             Confirmer
                         </Button>
-                    </>
+                    </div>
                 }
             >
                 <p className="text-sm text-slate-600">
-                    Une fois confirmée, cette transition ne peut pas être annulée.
-                    Assurez-vous que toutes les conditions préalables sont remplies.
+                    Assurez-vous que toutes les conditions préalables sont remplies avant de continuer.
                 </p>
             </Modal>
         </div>
     );
 }
+
+// ── Onglet Résumé (inline — données statiques de l'examen) ────────────────────
+
+function ResumeTab({ examen }: { examen: ExamenRow }) {
+    const items: { label: string; value: string }[] = [
+        { label: 'Mode de délibération', value: DELIB_MODE_LABELS[examen.mode_deliberation] ?? examen.mode_deliberation },
+        { label: 'Seuil admissibilité', value: `${examen.seuil_phase1} / 20` },
+        ...(examen.seuil_phase2 !== null
+            ? [{ label: 'Seuil phase 2', value: `${examen.seuil_phase2} / 20` }]
+            : []),
+        ...(examen.seuil_rattrapage !== null
+            ? [{ label: 'Seuil rattrapage', value: `${examen.seuil_rattrapage} / 20` }]
+            : []),
+        { label: 'Options actives', value: [
+            examen.oral_actif ? 'Oral' : null,
+            examen.eps_active ? 'EPS' : null,
+            examen.facultatif_actif ? 'Facultatif' : null,
+            examen.rattrapage_actif ? 'Rattrapage' : null,
+        ].filter(Boolean).join(', ') || 'Aucune' },
+    ];
+
+    return (
+        <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-3">
+                Paramètres de délibération
+            </h3>
+            <dl className="divide-y divide-slate-50">
+                {items.map((item) => (
+                    <div key={item.label} className="flex justify-between py-2.5">
+                        <dt className="text-sm text-slate-500 w-52 flex-shrink-0">{item.label}</dt>
+                        <dd className="text-sm font-medium text-slate-900 text-right">{item.value}</dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
+    );
+}
+

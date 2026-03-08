@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ProfileRow } from '@/types/domain';
+import type { ProfileRow, UserRole } from '@/types/domain';
 
 /**
  * Service pour la gestion des profils et utilisateurs (M01)
@@ -32,16 +32,33 @@ export const profileService = {
         return data as ProfileRow;
     },
 
-    /** 
-     * Désactive un utilisateur via Edge Function 
-     * (Supabase Auth ne permet pas de désactiver directement depuis le client)
-     */
-    async disableUser(userId: string) {
+    /** Crée un utilisateur via Edge Function manage-users */
+    async createUser(payload: {
+        email: string;
+        password: string;
+        role: UserRole;
+        nom: string;
+        prenom: string;
+        telephone?: string;
+    }) {
         const { data, error } = await supabase.functions.invoke('manage-users', {
-            body: { action: 'disable', userId }
+            body: { action: 'create', ...payload },
         });
 
         if (error) throw error;
         return data;
-    }
+    },
+
+    /**
+     * Désactive un utilisateur via Edge Function
+     * (Supabase Auth ne permet pas de désactiver directement depuis le client)
+     */
+    async disableUser(userId: string) {
+        const { data, error } = await supabase.functions.invoke('manage-users', {
+            body: { action: 'disable', user_id: userId },
+        });
+
+        if (error) throw error;
+        return data;
+    },
 };
