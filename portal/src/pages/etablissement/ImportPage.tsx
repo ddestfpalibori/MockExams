@@ -28,6 +28,7 @@ export default function ImportPage() {
     const [result, setResult] = useState<ImportResult | null>(null);
     const [legalConfirmed, setLegalConfirmed] = useState(false);
     const [dragOver, setDragOver] = useState(false);
+    const [idempotencyKey, setIdempotencyKey] = useState('');
 
     const { data: examens } = useExamens();
     const { data: etablissements } = useMyEtablissements();
@@ -52,12 +53,15 @@ export default function ImportPage() {
         if (!file || !examenId || !etablissementId) return;
         const data = await importPreview.mutateAsync({ file, examenId, etablissementId });
         setPreview(data ?? { nb_valides: 0, nb_erreurs: 0, warnings: [] });
+        // Générer une clé d'idempotence pour l'import (anti-doublons)
+        const key = `${etablissementId}-${examenId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        setIdempotencyKey(key);
         setStep(3);
     };
 
     const handleImport = async () => {
-        if (!file || !examenId || !etablissementId || !legalConfirmed) return;
-        const data = await importCandidats.mutateAsync({ file, examenId, etablissementId });
+        if (!file || !examenId || !etablissementId || !legalConfirmed || !idempotencyKey) return;
+        const data = await importCandidats.mutateAsync({ file, examenId, etablissementId, idempotencyKey });
         setResult(data ?? { nb_succes: 0, nb_erreurs: 0, rapport: [] });
         setStep(4);
     };

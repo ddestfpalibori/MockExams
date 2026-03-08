@@ -62,13 +62,14 @@ export function useImportCandidats() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (params: { file: File; examenId: string; etablissementId: string }) => {
+        mutationFn: async (params: { file: File; examenId: string; etablissementId: string; idempotencyKey: string }) => {
             const formData = new FormData();
             formData.append('file', params.file);
             formData.append('examen_id', params.examenId);
             formData.append('etablissement_id', params.etablissementId);
             formData.append('mode', 'import');
             formData.append('import_legal_confirmed', 'true');
+            formData.append('idempotency_key', params.idempotencyKey);
 
             const { data, error } = await supabase.functions.invoke<{
                 nb_succes: number;
