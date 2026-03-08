@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { useMyCentres } from '@/hooks/queries/useProfiles';
+import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useGenererAnonymats } from '@/hooks/queries/useLots';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { Hash, CheckCircle } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function AnonymatsPage() {
-    const { data: centres } = useMyCentres();
-    const centreId = centres?.[0]?.id ?? '';
+    const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
 
     const { data: examens, isLoading: examensLoading } = useExamens();
     const [examenId, setExamenId] = useState('');
@@ -45,6 +45,15 @@ export default function AnonymatsPage() {
                     Cette opération est idempotente : sûre à relancer.
                 </p>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={centres}
+                    activeId={centreId}
+                    onSelect={setActiveId}
+                    label="Centre actif"
+                />
+            )}
 
             <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-6">
                 <div>

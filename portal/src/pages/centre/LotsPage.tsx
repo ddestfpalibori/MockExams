@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useMyCentres } from '@/hooks/queries/useProfiles';
+import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useLots, useSignerLot } from '@/hooks/queries/useLots';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
 import { LotStatusBadge } from '@/components/ui/StatusBadge';
@@ -11,8 +12,7 @@ import type { ExamenRow } from '@/types/domain';
 import type { LotWithDetails } from '@/services/lots';
 
 export default function LotsPage() {
-    const { data: centres } = useMyCentres();
-    const centreId = centres?.[0]?.id ?? '';
+    const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
 
     const { data: examens } = useExamens();
     const [examenId, setExamenId] = useState('');
@@ -109,6 +109,15 @@ export default function LotsPage() {
                     </p>
                 </div>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={centres}
+                    activeId={centreId}
+                    onSelect={setActiveId}
+                    label="Centre actif"
+                />
+            )}
 
             <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-slate-700">Examen :</label>

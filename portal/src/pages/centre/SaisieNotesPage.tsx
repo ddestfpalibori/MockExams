@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useMyCentres } from '@/hooks/queries/useProfiles';
+import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { useLots } from '@/hooks/queries/useLots';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/lib/constants/queryKeys';
@@ -21,8 +22,7 @@ interface SaisieResult {
 
 export default function SaisieNotesPage() {
     const queryClient = useQueryClient();
-    const { data: centres } = useMyCentres();
-    const centreId = centres?.[0]?.id ?? '';
+    const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
 
     const { data: examens } = useExamens();
     const [examenId, setExamenId] = useState('');
@@ -118,6 +118,15 @@ export default function SaisieNotesPage() {
                     {realtimeConnected ? 'Temps réel actif' : 'Connexion...'}
                 </div>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={centres}
+                    activeId={centreId}
+                    onSelect={setActiveId}
+                    label="Centre actif"
+                />
+            )}
 
             {/* Sélection examen */}
             <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">

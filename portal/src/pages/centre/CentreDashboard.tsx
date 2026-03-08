@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useExamens } from '@/hooks/queries/useExamens';
-import { useMyCentres } from '@/hooks/queries/useProfiles';
+import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useCentreStats } from '@/hooks/queries/useLots';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -11,8 +12,8 @@ import type { ExamenRow } from '@/types/domain';
 
 export default function CentreDashboard() {
     const navigate = useNavigate();
-    const { data: centres } = useMyCentres();
-    const centreId = centres?.[0]?.id ?? '';
+    const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
+    const activeCentre = centres.find((c) => c.id === centreId) ?? centres[0];
 
     const { data: stats, isLoading: statsLoading } = useCentreStats(centreId);
     const { data: examens, isLoading: examensLoading } = useExamens();
@@ -96,8 +97,8 @@ export default function CentreDashboard() {
                         Tableau de Bord Centre
                     </h1>
                     <p className="text-slate-500">
-                        {centres?.[0]
-                            ? `${centres[0].nom} (${centres[0].code})`
+                        {activeCentre
+                            ? `${activeCentre.nom} (${activeCentre.code})`
                             : 'Chargement...'}
                     </p>
                 </div>
@@ -106,6 +107,15 @@ export default function CentreDashboard() {
                     Gérer les salles
                 </Button>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={centres}
+                    activeId={centreId}
+                    onSelect={setActiveId}
+                    label="Centre actif"
+                />
+            )}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard

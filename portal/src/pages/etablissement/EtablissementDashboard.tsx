@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { useExamens } from '@/hooks/queries/useExamens';
-import { useMyEtablissements, useEtablissementStats } from '@/hooks/queries/useEtablissements';
+import { useActiveEtablissement } from '@/hooks/useActiveEtablissement';
+import { useEtablissementStats } from '@/hooks/queries/useEtablissements';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -10,8 +12,8 @@ import type { ExamenRow } from '@/types/domain';
 
 export default function EtablissementDashboard() {
     const navigate = useNavigate();
-    const { data: etablissements } = useMyEtablissements();
-    const etablissementId = etablissements?.[0]?.id ?? '';
+    const { activeId: etablissementId, etablissements, isMulti, setActiveId } = useActiveEtablissement();
+    const activeEtablissement = etablissements.find((e) => e.id === etablissementId) ?? etablissements[0];
 
     const { data: stats, isLoading: statsLoading } = useEtablissementStats(etablissementId);
     const { data: examens, isLoading: examensLoading } = useExamens();
@@ -80,8 +82,8 @@ export default function EtablissementDashboard() {
                         Tableau de Bord Établissement
                     </h1>
                     <p className="text-slate-500">
-                        {etablissements?.[0]
-                            ? `${etablissements[0].nom} (${etablissements[0].code})`
+                        {activeEtablissement
+                            ? `${activeEtablissement.nom} (${activeEtablissement.code})`
                             : 'Chargement...'}
                     </p>
                 </div>
@@ -90,6 +92,15 @@ export default function EtablissementDashboard() {
                     Importer des candidats
                 </Button>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={etablissements}
+                    activeId={etablissementId}
+                    onSelect={setActiveId}
+                    label="Établissement actif"
+                />
+            )}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard

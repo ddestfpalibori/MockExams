@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useExamens } from '@/hooks/queries/useExamens';
-import { useMyEtablissements, useImportPreview, useImportCandidats } from '@/hooks/queries/useEtablissements';
+import { useImportPreview, useImportCandidats } from '@/hooks/queries/useEtablissements';
+import { useActiveEtablissement } from '@/hooks/useActiveEtablissement';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { Button } from '@/components/ui/Button';
 import { Upload, CheckCircle, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,8 +33,7 @@ export default function ImportPage() {
     const [idempotencyKey, setIdempotencyKey] = useState('');
 
     const { data: examens } = useExamens();
-    const { data: etablissements } = useMyEtablissements();
-    const etablissementId = etablissements?.[0]?.id ?? '';
+    const { activeId: etablissementId, etablissements, isMulti, setActiveId } = useActiveEtablissement();
 
     const importPreview = useImportPreview();
     const importCandidats = useImportCandidats();
@@ -92,6 +93,15 @@ export default function ImportPage() {
                     Importez la liste des candidats via fichier Excel (format DDEST-FP).
                 </p>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={etablissements}
+                    activeId={etablissementId}
+                    onSelect={setActiveId}
+                    label="Établissement actif"
+                />
+            )}
 
             {/* Stepper */}
             <div className="flex items-center gap-0">

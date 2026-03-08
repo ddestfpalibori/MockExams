@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { useMyCentres } from '@/hooks/queries/useProfiles';
+import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useAffecter } from '@/hooks/queries/useLots';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EntitySelector } from '@/components/ui/EntitySelector';
 import { Users, CheckCircle } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function AffectationPage() {
-    const { data: centres } = useMyCentres();
-    const centreId = centres?.[0]?.id ?? '';
+    const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
 
     const { data: examens, isLoading: examensLoading } = useExamens();
     const [examenId, setExamenId] = useState('');
@@ -41,6 +41,15 @@ export default function AffectationPage() {
                     Répartissez automatiquement les candidats dans les salles de votre centre (F04).
                 </p>
             </div>
+
+            {isMulti && (
+                <EntitySelector
+                    entities={centres}
+                    activeId={centreId}
+                    onSelect={setActiveId}
+                    label="Centre actif"
+                />
+            )}
 
             <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-6">
                 <div>
