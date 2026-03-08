@@ -1,25 +1,169 @@
-import { Skeleton } from '../../components/ui/Skeleton';
+import { useNavigate } from 'react-router-dom';
+import { useExamens } from '@/hooks/queries/useExamens';
+import { useMyCentres } from '@/hooks/queries/useProfiles';
+import { useCentreStats } from '@/hooks/queries/useLots';
+import { StatCard } from '@/components/ui/StatCard';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/Button';
+import { DoorOpen, Users, ClipboardList, FileCheck } from 'lucide-react';
+import type { ExamenRow } from '@/types/domain';
 
-export const CentreDashboard = () => {
+export default function CentreDashboard() {
+    const navigate = useNavigate();
+    const { data: centres } = useMyCentres();
+    const centreId = centres?.[0]?.id ?? '';
+
+    const { data: stats, isLoading: statsLoading } = useCentreStats(centreId);
+    const { data: examens, isLoading: examensLoading } = useExamens();
+
+    const examensActifs = examens?.filter(
+        (e) => e.status !== 'CLOS' && e.status !== 'CONFIG'
+    ) ?? [];
+
+    const columns: Column<ExamenRow>[] = [
+        {
+            key: 'code',
+            header: 'Code',
+            cell: (row) => <span className="font-mono font-bold text-sm">{row.code}</span>,
+        },
+        {
+            key: 'libelle',
+            header: 'Libellé / Année',
+            cell: (row) => (
+                <div className="flex flex-col">
+                    <span className="font-medium">{row.libelle}</span>
+                    <span className="text-xs text-slate-400">{row.annee}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Statut',
+            cell: (row) => <StatusBadge status={row.status} />,
+        },
+        {
+            key: 'actions',
+            header: 'Actions disponibles',
+            cell: (row) => (
+                <div className="flex flex-wrap items-center gap-1">
+                    {row.status === 'COMPOSITION' && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate('/centre/affectation')}
+                        >
+                            Affecter
+                        </Button>
+                    )}
+                    {(row.status === 'COMPOSITION' || row.status === 'INSCRIPTIONS') && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate('/centre/anonymats')}
+                        >
+                            Anonymats
+                        </Button>
+                    )}
+                    {row.status === 'CORRECTION' && (
+                        <>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate('/centre/lots')}
+                            >
+                                Lots
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate('/centre/saisie')}
+                            >
+                                Saisie notes
+                            </Button>
+                        </>
+                    )}
+                </div>
+            ),
+        },
+    ];
+
     return (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold mb-4">Tableau de bord Chef Centre</h2>
-                <p className="text-slate-600 mb-6">Gestion des examens pour votre centre.</p>
-
-                {/* Placeholder content */}
-                <div className="grid grid-cols-3 gap-4 mt-6">
-                    <Skeleton variant="card" size="sm" />
-                    <Skeleton variant="card" size="sm" />
-                    <Skeleton variant="card" size="sm" />
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                        Tableau de Bord Centre
+                    </h1>
+                    <p className="text-slate-500">
+                        {centres?.[0]
+                            ? `${centres[0].nom} (${centres[0].code})`
+                            : 'Chargement...'}
+                    </p>
                 </div>
+                <Button variant="outline" onClick={() => navigate('/centre/salles')}>
+                    <DoorOpen className="mr-2 h-4 w-4" />
+                    Gérer les salles
+                </Button>
+            </div>
 
-                <div className="mt-8 space-y-3">
-                    <Skeleton variant="line" size="md" />
-                    <Skeleton variant="line" size="md" />
-                    <Skeleton variant="line" size="sm" className="w-5/6" />
-                </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                    title="Examens actifs"
+                    value={examensActifs.length}
+                    icon={<ClipboardList className="h-4 w-4" />}
+                    variant="warning"
+                    isLoading={examensLoading}
+                />
+                <StatCard
+                    title="Salles configurées"
+                    value={stats?.nb_salles ?? 0}
+                    icon={<DoorOpen className="h-4 w-4" />}
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Candidats affectés"
+                    value={stats?.nb_candidats ?? 0}
+                    icon={<Users className="h-4 w-4" />}
+                    variant="success"
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Lots de correction"
+                    value="—"
+                    icon={<FileCheck className="h-4 w-4" />}
+                    isLoading={false}
+                />
+            </div>
+
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-slate-900">Examens en cours</h2>
+                <DataTable
+                    columns={columns}
+                    data={examensActifs}
+                    rowKey={(row) => row.id}
+                    isLoading={examensLoading}
+                    emptyMessage="Aucun examen actif pour votre centre."
+                />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                {[
+                    { label: 'Salles', path: '/centre/salles', icon: DoorOpen },
+                    { label: 'Affectation', path: '/centre/affectation', icon: Users },
+                    { label: 'Anonymats', path: '/centre/anonymats', icon: FileCheck },
+                    { label: 'Lots', path: '/centre/lots', icon: ClipboardList },
+                ].map(({ label, path, icon: Icon }) => (
+                    <button
+                        key={path}
+                        onClick={() => navigate(path)}
+                        className="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-6 hover:border-brand-primary hover:bg-brand-primary/5 transition-colors"
+                    >
+                        <Icon className="h-6 w-6 text-brand-primary" />
+                        <span className="text-sm font-medium text-slate-700">{label}</span>
+                    </button>
+                ))}
             </div>
         </div>
     );
-};
+}

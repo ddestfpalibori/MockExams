@@ -9,21 +9,35 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { Skeleton } from './components/ui/Skeleton';
 import { useAuth } from './hooks/useAuth';
 
-// Lazy-loaded pages
-const AdminDashboard = lazy(() =>
-    import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard }))
-);
-const CentreDashboard = lazy(() =>
-    import('./pages/centre/CentreDashboard').then(m => ({ default: m.CentreDashboard }))
-);
-const EtablissementDashboard = lazy(() =>
-    import('./pages/etablissement/EtablissementDashboard').then(m => ({ default: m.EtablissementDashboard }))
-);
-const TutelleDashboard = lazy(() =>
-    import('./pages/tutelle/TutelleDashboard').then(m => ({ default: m.TutelleDashboard }))
-);
+// ─── Lazy pages ───────────────────────────────────────────────────────────────
 
-// Loading fallback
+// Public (no auth required)
+const ConsultationPage = lazy(() => import('./pages/public/ConsultationPage'));
+
+// Admin
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ExamensPage = lazy(() => import('./pages/admin/ExamensPage'));
+const ExamenDetailPage = lazy(() => import('./pages/admin/ExamenDetailPage'));
+
+// Chef Centre
+const CentreDashboard = lazy(() => import('./pages/centre/CentreDashboard'));
+const SallesPage = lazy(() => import('./pages/centre/SallesPage'));
+const AffectationPage = lazy(() => import('./pages/centre/AffectationPage'));
+const AnonymatsPage = lazy(() => import('./pages/centre/AnonymatsPage'));
+const LotsPage = lazy(() => import('./pages/centre/LotsPage'));
+const SaisieNotesPage = lazy(() => import('./pages/centre/SaisieNotesPage'));
+
+// Chef Établissement
+const EtablissementDashboard = lazy(() => import('./pages/etablissement/EtablissementDashboard'));
+const CandidatsEtabPage = lazy(() => import('./pages/etablissement/CandidatsPage'));
+const ImportPage = lazy(() => import('./pages/etablissement/ImportPage'));
+
+// Tutelle
+const TutelleDashboard = lazy(() => import('./pages/tutelle/TutelleDashboard'));
+const ResultatsPage = lazy(() => import('./pages/tutelle/ResultatsPage'));
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
 const LoadingFallback = () => (
     <div className="w-full max-w-2xl mx-auto p-6 space-y-4">
         <Skeleton variant="line" size="lg" className="w-1/3" />
@@ -35,13 +49,14 @@ const LoadingFallback = () => (
     </div>
 );
 
-// Unauthorized page
 const UnauthorizedPage = () => (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
         <div className="text-center space-y-4">
             <div className="text-6xl font-bold text-slate-300">403</div>
             <h1 className="text-2xl font-bold text-slate-900">Accès refusé</h1>
-            <p className="text-slate-600">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
+            <p className="text-slate-600">
+                Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            </p>
             <Link
                 to="/"
                 className="inline-block mt-6 px-6 py-2.5 bg-brand-primary text-white rounded-md hover:bg-brand-primary/90 transition-colors"
@@ -52,7 +67,6 @@ const UnauthorizedPage = () => (
     </div>
 );
 
-// Redirect intelligent par rôle
 const RoleRedirect = () => {
     const { role, isLoading } = useAuth();
 
@@ -72,73 +86,105 @@ const RoleRedirect = () => {
     }
 };
 
+// ─── App ──────────────────────────────────────────────────────────────────────
+
 function App() {
     return (
         <AuthProvider>
             <BrowserRouter>
                 <Routes>
-                    {/* Routes publiques */}
+                    {/* ── Consultation publique (AVANT le bloc protégé) ── */}
+                    <Route
+                        path="/consultation"
+                        element={
+                            <Suspense fallback={<LoadingFallback />}>
+                                <ConsultationPage />
+                            </Suspense>
+                        }
+                    />
+
+                    {/* ── Auth ── */}
                     <Route path="/auth" element={<AuthLayout />}>
                         <Route path="login" element={<LoginPage />} />
                     </Route>
 
-                    {/* Page non autorisé */}
+                    {/* ── 403 ── */}
                     <Route path="/403" element={<UnauthorizedPage />} />
 
-                    {/* Routes protégées */}
+                    {/* ── Routes protégées ── */}
                     <Route path="/" element={<RoleGuard><RootLayout /></RoleGuard>}>
                         <Route index element={<RoleRedirect />} />
 
-                        {/* Admin routes */}
+                        {/* ── Admin ── */}
                         <Route
                             path="admin/*"
                             element={
                                 <RoleGuard allowedRoles={['admin']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
-                                            <AdminDashboard />
+                                            <Routes>
+                                                <Route index element={<AdminDashboard />} />
+                                                <Route path="examens" element={<ExamensPage />} />
+                                                <Route path="examens/nouveau" element={<div className="p-6 text-slate-500">Formulaire Examen — à venir (P3.4)</div>} />
+                                                <Route path="examens/:id" element={<ExamenDetailPage />} />
+                                                <Route path="utilisateurs" element={<div className="p-6 text-slate-500">Gestion utilisateurs — à venir (P3.5)</div>} />
+                                            </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
                                 </RoleGuard>
                             }
                         />
 
-                        {/* Chef Centre routes */}
+                        {/* ── Chef Centre ── */}
                         <Route
                             path="centre/*"
                             element={
                                 <RoleGuard allowedRoles={['chef_centre']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
-                                            <CentreDashboard />
+                                            <Routes>
+                                                <Route index element={<CentreDashboard />} />
+                                                <Route path="salles" element={<SallesPage />} />
+                                                <Route path="affectation" element={<AffectationPage />} />
+                                                <Route path="anonymats" element={<AnonymatsPage />} />
+                                                <Route path="lots" element={<LotsPage />} />
+                                                <Route path="saisie" element={<SaisieNotesPage />} />
+                                            </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
                                 </RoleGuard>
                             }
                         />
 
-                        {/* Chef Établissement routes */}
+                        {/* ── Chef Établissement ── */}
                         <Route
                             path="etablissement/*"
                             element={
                                 <RoleGuard allowedRoles={['chef_etablissement']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
-                                            <EtablissementDashboard />
+                                            <Routes>
+                                                <Route index element={<EtablissementDashboard />} />
+                                                <Route path="candidats" element={<CandidatsEtabPage />} />
+                                                <Route path="import" element={<ImportPage />} />
+                                            </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
                                 </RoleGuard>
                             }
                         />
 
-                        {/* Tutelle routes */}
+                        {/* ── Tutelle ── */}
                         <Route
                             path="tutelle/*"
                             element={
                                 <RoleGuard allowedRoles={['tutelle']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
-                                            <TutelleDashboard />
+                                            <Routes>
+                                                <Route index element={<TutelleDashboard />} />
+                                                <Route path="resultats" element={<ResultatsPage />} />
+                                            </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
                                 </RoleGuard>
@@ -146,7 +192,7 @@ function App() {
                         />
                     </Route>
 
-                    {/* Catch-all: redirect to home */}
+                    {/* ── Catch-all ── */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </BrowserRouter>

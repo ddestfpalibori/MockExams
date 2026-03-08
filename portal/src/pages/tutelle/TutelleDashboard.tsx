@@ -1,25 +1,114 @@
-import { Skeleton } from '../../components/ui/Skeleton';
+import { useNavigate } from 'react-router-dom';
+import { useExamens, useExamenStats } from '@/hooks/queries/useExamens';
+import { StatCard } from '@/components/ui/StatCard';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/Button';
+import { ClipboardList, Users, School, BarChart2 } from 'lucide-react';
+import type { ExamenRow } from '@/types/domain';
 
-export const TutelleDashboard = () => {
+export default function TutelleDashboard() {
+    const navigate = useNavigate();
+    const { data: stats, isLoading: statsLoading } = useExamenStats();
+    const { data: examens, isLoading: examensLoading } = useExamens();
+
+    const columns: Column<ExamenRow>[] = [
+        {
+            key: 'code',
+            header: 'Code',
+            cell: (row) => <span className="font-mono font-bold text-sm">{row.code}</span>,
+        },
+        {
+            key: 'libelle',
+            header: 'Libellé',
+            cell: (row) => (
+                <div className="flex flex-col">
+                    <span className="font-medium">{row.libelle}</span>
+                    <span className="text-xs text-slate-400">{row.annee}</span>
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Statut',
+            cell: (row) => <StatusBadge status={row.status} />,
+        },
+        {
+            key: 'actions',
+            header: '',
+            cell: (row) =>
+                row.status === 'PUBLIE' || row.status === 'DELIBERE' ? (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/tutelle/resultats?examen=${row.id}`)}
+                    >
+                        <BarChart2 className="mr-1 h-3 w-3" />
+                        Résultats
+                    </Button>
+                ) : null,
+        },
+    ];
+
     return (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold mb-4">Tableau de bord Tutelle</h2>
-                <p className="text-slate-600 mb-6">Suivi des examens à l'échelle de la tutelle.</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    Tableau de Bord Tutelle
+                </h1>
+                <p className="text-slate-500">
+                    Suivi global de toutes les sessions d'examens (lecture seule).
+                </p>
+            </div>
 
-                {/* Placeholder content */}
-                <div className="grid grid-cols-3 gap-4 mt-6">
-                    <Skeleton variant="card" size="sm" />
-                    <Skeleton variant="card" size="sm" />
-                    <Skeleton variant="card" size="sm" />
-                </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard
+                    title="Total Examens"
+                    value={stats?.total_examens ?? 0}
+                    icon={<ClipboardList className="h-4 w-4" />}
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Examens Actifs"
+                    value={stats?.examens_actifs ?? 0}
+                    icon={<BarChart2 className="h-4 w-4" />}
+                    variant="warning"
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Centres"
+                    value={stats?.total_centres ?? 0}
+                    icon={<School className="h-4 w-4" />}
+                    isLoading={statsLoading}
+                />
+                <StatCard
+                    title="Candidats"
+                    value={stats?.total_candidats ?? 0}
+                    icon={<Users className="h-4 w-4" />}
+                    variant="success"
+                    isLoading={statsLoading}
+                />
+            </div>
 
-                <div className="mt-8 space-y-3">
-                    <Skeleton variant="line" size="md" />
-                    <Skeleton variant="line" size="md" />
-                    <Skeleton variant="line" size="sm" className="w-5/6" />
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-slate-900">Tous les examens</h2>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/tutelle/resultats')}
+                    >
+                        Voir les résultats
+                    </Button>
                 </div>
+                <DataTable
+                    columns={columns}
+                    data={examens ?? []}
+                    rowKey={(row) => row.id}
+                    isLoading={examensLoading}
+                    emptyMessage="Aucun examen disponible."
+                />
             </div>
         </div>
     );
-};
+}

@@ -3,7 +3,7 @@
  * Retry intelligent, cache strategy, error handling global
  */
 
-import { QueryClient, MutationCache } from '@tanstack/react-query';
+import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 /**
@@ -13,7 +13,7 @@ import { toast } from 'sonner';
  * - AbortError : utilisateur a annulé — pas de retry
  * - Autres erreurs réseau : max 2 tentatives
  */
-function shouldRetry(failureCount: number, error: unknown): boolean {
+export function shouldRetry(failureCount: number, error: unknown): boolean {
   if (failureCount >= 2) return false; // Max 2 tentatives
 
   const err = error as { status?: number; name?: string; message?: string };
@@ -26,6 +26,15 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
 }
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error: unknown) => {
+      const err = error as { status?: number };
+      if (err?.status === 401) {
+        queryClient.clear();
+        window.location.href = '/auth/login';
+      }
+    },
+  }),
   defaultOptions: {
     queries: {
       retry: shouldRetry,
