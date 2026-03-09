@@ -16,8 +16,74 @@ export type Database = {
     Tables: {
       [_ in never]: never
     }
-    Views: {
-      [_ in never]: never
+        Views: {
+      v_candidats_affichage: {
+        Row: {
+          candidat_fingerprint: string | null
+          centre_id: string | null
+          created_at: string | null
+          date_naissance_enc: string | null
+          etablissement_id: string | null
+          examen_id: string | null
+          id: string | null
+          import_id: string | null
+          lieu_naissance_enc: string | null
+          nom_enc: string | null
+          numero_anonyme: string | null
+          numero_table: number | null
+          numero_table_formate: string | null
+          prenom_enc: string | null
+          salle_id: string | null
+          serie_id: string | null
+          sexe: string | null
+          source_candidat_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidats_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_examen_id_fkey"
+            columns: ["examen_id"]
+            isOneToOne: false
+            referencedRelation: "examens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "imports_log"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_serie_id_fkey"
+            columns: ["serie_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_source_candidat_id_fkey"
+            columns: ["source_candidat_id"]
+            isOneToOne: false
+            referencedRelation: "candidats"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Functions: {
       graphql: {
@@ -279,6 +345,8 @@ export type Database = {
       centres: {
         Row: {
           code: string
+          code_commune: string | null
+          code_departement: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -288,6 +356,8 @@ export type Database = {
         }
         Insert: {
           code: string
+          code_commune?: string | null
+          code_departement?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -297,6 +367,8 @@ export type Database = {
         }
         Update: {
           code?: string
+          code_commune?: string | null
+          code_departement?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -532,8 +604,8 @@ export type Database = {
           discipline_id: string
           examen_id: string
           facultatif_option:
-            | Database["public"]["Enums"]["facultatif_option"]
-            | null
+          | Database["public"]["Enums"]["facultatif_option"]
+          | null
           groupe_choix_id: string | null
           id: string
           oral_model: Database["public"]["Enums"]["oral_model"] | null
@@ -547,8 +619,8 @@ export type Database = {
           discipline_id: string
           examen_id: string
           facultatif_option?:
-            | Database["public"]["Enums"]["facultatif_option"]
-            | null
+          | Database["public"]["Enums"]["facultatif_option"]
+          | null
           groupe_choix_id?: string | null
           id?: string
           oral_model?: Database["public"]["Enums"]["oral_model"] | null
@@ -562,8 +634,8 @@ export type Database = {
           discipline_id?: string
           examen_id?: string
           facultatif_option?:
-            | Database["public"]["Enums"]["facultatif_option"]
-            | null
+          | Database["public"]["Enums"]["facultatif_option"]
+          | null
           groupe_choix_id?: string | null
           id?: string
           oral_model?: Database["public"]["Enums"]["oral_model"] | null
@@ -760,6 +832,11 @@ export type Database = {
           seuil_phase2: number
           seuil_rattrapage: number | null
           status: Database["public"]["Enums"]["exam_status"]
+          table_continuity_scope: Database["public"]["Enums"]["table_continuity_scope"]
+          table_padding: number
+          table_prefix_type: Database["public"]["Enums"]["table_prefix_mode"]
+          table_prefix_valeur: string | null
+          table_separator: string
           taille_salle_ref: number
           updated_at: string
         }
@@ -788,6 +865,11 @@ export type Database = {
           seuil_phase2?: number
           seuil_rattrapage?: number | null
           status?: Database["public"]["Enums"]["exam_status"]
+          table_continuity_scope?: Database["public"]["Enums"]["table_continuity_scope"]
+          table_padding?: number
+          table_prefix_type?: Database["public"]["Enums"]["table_prefix_mode"]
+          table_prefix_valeur?: string | null
+          table_separator?: string
           taille_salle_ref?: number
           updated_at?: string
         }
@@ -816,6 +898,11 @@ export type Database = {
           seuil_phase2?: number
           seuil_rattrapage?: number | null
           status?: Database["public"]["Enums"]["exam_status"]
+          table_continuity_scope?: Database["public"]["Enums"]["table_continuity_scope"]
+          table_padding?: number
+          table_prefix_type?: Database["public"]["Enums"]["table_prefix_mode"]
+          table_prefix_valeur?: string | null
+          table_separator?: string
           taille_salle_ref?: number
           updated_at?: string
         }
@@ -1374,19 +1461,21 @@ export type Database = {
       discipline_type: "ecrit_obligatoire" | "oral" | "eps" | "facultatif"
       distribution_model: "A" | "B"
       exam_status:
-        | "CONFIG"
-        | "INSCRIPTIONS"
-        | "COMPOSITION"
-        | "CORRECTION"
-        | "DELIBERATION"
-        | "DELIBERE"
-        | "CORRECTION_POST_DELIBERATION"
-        | "PUBLIE"
-        | "CLOS"
+      | "CONFIG"
+      | "INSCRIPTIONS"
+      | "COMPOSITION"
+      | "CORRECTION"
+      | "DELIBERATION"
+      | "DELIBERE"
+      | "CORRECTION_POST_DELIBERATION"
+      | "PUBLIE"
+      | "CLOS"
       facultatif_option: "1" | "2"
       lot_status: "EN_ATTENTE" | "EN_COURS" | "TERMINE" | "VERIFIE"
       oral_model: "A" | "B"
       resultat_status: "ADMIS" | "NON_ADMIS" | "RATTRAPAGE"
+      table_continuity_scope: "CENTRE" | "DEPARTEMENT" | "EXAMEN"
+      table_prefix_mode: "AUCUN" | "FIXE" | "CENTRE" | "COMMUNE" | "DEPARTEMENT"
       user_role: "admin" | "chef_centre" | "chef_etablissement" | "tutelle"
     }
     CompositeTypes: {
@@ -1401,116 +1490,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
+    Insert: infer I
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+    Update: infer U
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
   graphql_public: {
@@ -1537,6 +1626,8 @@ export const Constants = {
       lot_status: ["EN_ATTENTE", "EN_COURS", "TERMINE", "VERIFIE"],
       oral_model: ["A", "B"],
       resultat_status: ["ADMIS", "NON_ADMIS", "RATTRAPAGE"],
+      table_continuity_scope: ["CENTRE", "DEPARTEMENT", "EXAMEN"],
+      table_prefix_mode: ["AUCUN", "FIXE", "CENTRE", "COMMUNE", "DEPARTEMENT"],
       user_role: ["admin", "chef_centre", "chef_etablissement", "tutelle"],
     },
   },
