@@ -19,15 +19,16 @@ export const candidatService = {
         const from = (params.page - 1) * params.pageSize;
         const to = from + params.pageSize - 1;
 
-        let query = supabase
-            .from('candidats')
+        let query = (supabase
+            .from('v_candidats_affichage' as any) as any)
             .select(`
                 id,
                 numero_anonyme,
                 serie_id,
                 centre_id,
                 salle_id,
-                numero_table
+                numero_table,
+                numero_table_formate
             `, { count: 'exact' })
             .eq('examen_id', params.examenId)
             .range(from, to);

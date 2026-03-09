@@ -29,6 +29,13 @@ const schema = z.object({
     date_composition_debut: z.string().nullable(),
     date_composition_fin: z.string().nullable(),
 
+    // Configuration Numéros de Table
+    table_prefix_type: z.enum(['AUCUN', 'FIXE', 'CENTRE', 'COMMUNE', 'DEPARTEMENT'] as const),
+    table_prefix_valeur: z.string().nullable(),
+    table_separator: z.string().min(1, 'Requis'),
+    table_padding: z.number().int().min(1).max(10),
+    table_continuity_scope: z.enum(['CENTRE', 'DEPARTEMENT', 'EXAMEN'] as const),
+
     // Étape 3 — Délibération & Options
     mode_deliberation: z.enum(['unique', 'deux_phases'] as const),
     seuil_phase1: z.number().min(0, 'Entre 0 et 20').max(20, 'Entre 0 et 20'),
@@ -58,6 +65,11 @@ const DEFAULT_VALUES: FormValues = {
     hmac_window_days: 30,
     date_composition_debut: null,
     date_composition_fin: null,
+    table_prefix_type: 'CENTRE',
+    table_prefix_valeur: null,
+    table_separator: '-',
+    table_padding: 4,
+    table_continuity_scope: 'CENTRE',
     mode_deliberation: 'unique',
     seuil_phase1: 10,
     seuil_phase2: 12,
@@ -165,6 +177,8 @@ function ConfirmationStep({ control }: { control: Control<FormValues> }) {
         { label: 'Validité HMAC', value: `${values.hmac_window_days ?? ''} jours` },
         { label: 'Début composition', value: values.date_composition_debut || '—' },
         { label: 'Fin composition', value: values.date_composition_fin || '—' },
+        { label: 'Préfixe Table', value: values.table_prefix_type ?? '—' },
+        { label: 'Continuité Table', value: values.table_continuity_scope ?? '—' },
         { label: 'Mode délibération', value: values.mode_deliberation === 'deux_phases' ? 'Deux phases' : 'Phase unique' },
         { label: 'Seuil admissibilité', value: `${values.seuil_phase1 ?? ''} / 20` },
         ...(values.mode_deliberation === 'deux_phases'
@@ -256,6 +270,11 @@ export default function ExamenFormPage() {
                 oral_actif: examen.oral_actif,
                 eps_active: examen.eps_active,
                 facultatif_actif: examen.facultatif_actif,
+                table_prefix_type: (examen as any).table_prefix_type || 'CENTRE',
+                table_prefix_valeur: (examen as any).table_prefix_valeur || null,
+                table_separator: (examen as any).table_separator || '-',
+                table_padding: (examen as any).table_padding || 4,
+                table_continuity_scope: (examen as any).table_continuity_scope || 'CENTRE',
             });
         }
     }, [isEdit, examen, reset]);
@@ -269,6 +288,7 @@ export default function ExamenFormPage() {
             valid = await trigger([
                 'anonymat_prefixe', 'anonymat_debut', 'anonymat_bon',
                 'taille_salle_ref', 'distribution_model', 'hmac_window_days',
+                'table_prefix_type', 'table_separator', 'table_padding', 'table_continuity_scope',
             ]);
         } else if (step === 3) {
             const fields: (keyof FormValues)[] = ['mode_deliberation', 'seuil_phase1'];
@@ -428,6 +448,48 @@ export default function ExamenFormPage() {
                                 <FormField label="Fin de composition">
                                     <Input type="date" {...register('date_composition_fin')} />
                                 </FormField>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 space-y-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                    Numérotation des tables
+                                </p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <FormField label="Portée du préfixe" required hint="Origine du code préfixe">
+                                        <Select {...register('table_prefix_type')}>
+                                            <option value="AUCUN">Aucun (Numéro pur)</option>
+                                            <option value="FIXE">Texte fixe personnalisé</option>
+                                            <option value="CENTRE">Code du Centre</option>
+                                            <option value="COMMUNE">Code de la Commune</option>
+                                            <option value="DEPARTEMENT">Code du Département</option>
+                                        </Select>
+                                    </FormField>
+
+                                    <FormField label="Continuité" required hint="Étendue de la suite de numéros">
+                                        <Select {...register('table_continuity_scope')}>
+                                            <option value="CENTRE">Par Centre (repart à 1)</option>
+                                            <option value="DEPARTEMENT">Par Département</option>
+                                            <option value="EXAMEN">Tout l'Examen</option>
+                                        </Select>
+                                    </FormField>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    <FormField label="Valeur fixe" hint="Si mode 'FIXE'">
+                                        <Input {...register('table_prefix_valeur')} placeholder="Ex: BAC-" />
+                                    </FormField>
+                                    <FormField label="Séparateur" required>
+                                        <Input {...register('table_separator')} placeholder="-" maxLength={2} />
+                                    </FormField>
+                                    <FormField label="Zéro padding" required hint="Nb de chiffres (ex: 4)">
+                                        <Input
+                                            type="number"
+                                            {...register('table_padding', { valueAsNumber: true })}
+                                            min={1}
+                                            max={10}
+                                        />
+                                    </FormField>
+                                </div>
                             </div>
                         </>
                     )}

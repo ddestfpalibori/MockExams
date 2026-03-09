@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useExamenCentres, useAddExamenCentre, useRemoveExamenCentre } from '@/hooks/queries/useExamens';
-import { useCentres } from '@/hooks/queries/useProfiles';
+import { useCentres, useUpdateCentre } from '@/hooks/queries/useProfiles';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { FormField, Select } from '@/components/ui/FormField';
-import { Plus, Trash2 } from 'lucide-react';
+import { FormField, Select, Input } from '@/components/ui/FormField';
+import { Plus, Trash2, Settings2 } from 'lucide-react';
 import type { CentreRow } from '@/types/domain';
 
 interface Props {
@@ -19,9 +19,11 @@ export function ExamenTabCentres({ examenId, isEditable }: Props) {
     const { data: tousLesCentres } = useCentres();
     const addMutation = useAddExamenCentre(examenId);
     const removeMutation = useRemoveExamenCentre(examenId);
+    const updateCentreMutation = useUpdateCentre();
 
     const [addOpen, setAddOpen] = useState(false);
     const [removeTarget, setRemoveTarget] = useState<CentreRow | null>(null);
+    const [editTarget, setEditTarget] = useState<CentreRow | null>(null);
     const [selectedCentreId, setSelectedCentreId] = useState('');
 
     // Centres actifs non encore associés
@@ -42,6 +44,18 @@ export function ExamenTabCentres({ examenId, isEditable }: Props) {
     const handleRemove = async (centre: CentreRow) => {
         await removeMutation.mutateAsync(centre.id);
         setRemoveTarget(null);
+    };
+
+    const handleUpdateCentre = async () => {
+        if (!editTarget) return;
+        await updateCentreMutation.mutateAsync({
+            id: editTarget.id,
+            input: {
+                code_departement: editTarget.code_departement,
+                code_commune: editTarget.code_commune,
+            },
+        });
+        setEditTarget(null);
     };
 
     const columns: Column<CentreRow>[] = [
@@ -69,20 +83,43 @@ export function ExamenTabCentres({ examenId, isEditable }: Props) {
                     : <Badge variant="danger">Inactif</Badge>,
         },
         {
+            key: 'codes',
+            header: 'Dept / Com',
+            cell: (row) => (
+                <span className="text-xs font-mono text-slate-500">
+                    {row.code_departement || '—'} / {row.code_commune || '—'}
+                </span>
+            ),
+        },
+        {
             key: 'actions',
             header: '',
-            cell: (row) =>
-                isEditable ? (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setRemoveTarget(row)}
-                        className="text-danger hover:bg-danger/10"
-                        title="Dissocier"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                ) : null,
+            cell: (row) => (
+                <div className="flex items-center gap-1 justify-end">
+                    {isEditable && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditTarget(row)}
+                            className="text-slate-400 hover:text-brand-primary"
+                            title="Configurer les codes"
+                        >
+                            <Settings2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                    {isEditable && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setRemoveTarget(row)}
+                            className="text-danger hover:bg-danger/10"
+                            title="Dissocier"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            ),
         },
     ];
 
@@ -166,6 +203,42 @@ export function ExamenTabCentres({ examenId, isEditable }: Props) {
                     Dissocier <strong>{removeTarget?.nom}</strong> de cet examen ?
                     Les salles et affectations existantes pour ce centre seront conservées.
                 </p>
+            </Modal>
+
+            {/* Modal édition codes */}
+            <Modal
+                open={!!editTarget}
+                onOpenChange={(o) => { if (!o) setEditTarget(null); }}
+                title="Configurer le centre"
+                description={`Définir les codes administratifs pour ${editTarget?.nom}`}
+                footer={
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+                        <Button
+                            onClick={handleUpdateCentre}
+                            isLoading={updateCentreMutation.isPending}
+                        >
+                            Enregistrer
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <FormField label="Code Département" hint="Ex: 01, 02, LITTORAL...">
+                        <Input
+                            value={editTarget?.code_departement || ''}
+                            onChange={(e) => setEditTarget(curr => curr ? { ...curr, code_departement: e.target.value } : null)}
+                            placeholder="01"
+                        />
+                    </FormField>
+                    <FormField label="Code Commune" hint="Ex: 05, COTONOU...">
+                        <Input
+                            value={editTarget?.code_commune || ''}
+                            onChange={(e) => setEditTarget(curr => curr ? { ...curr, code_commune: e.target.value } : null)}
+                            placeholder="05"
+                        />
+                    </FormField>
+                </div>
             </Modal>
         </div>
     );

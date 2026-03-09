@@ -14,6 +14,7 @@ interface ConsultationResult {
 interface ConsultationResponse {
     candidat: {
         numero_anonyme: string;
+        numero_table: string | null;
         serie: string;
         etablissement: string;
     };
@@ -199,7 +200,10 @@ export default function ConsultationPage() {
                     {result && result !== 'not_found' && (
                         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
                             <div className="text-center">
-                                <p className="text-sm text-slate-500 mb-1">Numéro : {candidatInfo?.numero_anonyme ?? numeroAnonyme}</p>
+                                <p className="text-sm text-slate-500 mb-1">N° anonyme : {candidatInfo?.numero_anonyme ?? numeroAnonyme}</p>
+                                {candidatInfo?.numero_table && (
+                                    <p className="text-sm text-slate-500 mb-1">N° table : {candidatInfo.numero_table}</p>
+                                )}
                                 <div className="flex justify-center">
                                     <ResultatStatusBadge status={result.status} />
                                 </div>

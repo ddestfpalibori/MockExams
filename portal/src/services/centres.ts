@@ -131,4 +131,17 @@ export const centreService = {
         if (error) throw error;
         return data as number;
     },
+
+    /** Met à jour un centre */
+    async updateCentre(id: string, input: Partial<CentreRow>): Promise<CentreRow> {
+        const { data, error } = await supabase
+            .from('centres')
+            .update(input)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data as CentreRow;
+    },
 };

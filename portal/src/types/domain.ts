@@ -12,6 +12,10 @@ export type UserRole = Database['public']['Enums']['user_role'];
 export type AffectationRule = Database['public']['Enums']['affectation_rule'];
 export type DisciplineType = Database['public']['Enums']['discipline_type'];
 
+// Enums migration 20260309 — numérotation avancée des tables
+export type TablePrefixMode = 'AUCUN' | 'FIXE' | 'CENTRE' | 'COMMUNE' | 'DEPARTEMENT';
+export type TableContinuityScope = 'CENTRE' | 'DEPARTEMENT' | 'EXAMEN';
+
 /** Colonnes candidats non-sensibles (sans PII chiffrées) */
 export interface CandidatRow {
     id: string;
@@ -20,6 +24,7 @@ export interface CandidatRow {
     centre_id: string | null;
     salle_id: string | null;
     numero_table: number | null;
+    numero_table_formate?: string | null;
 }
 
 export interface ExamenRow {
@@ -50,6 +55,13 @@ export interface ExamenRow {
     date_composition_fin: string | null;
     date_deliberation: string | null;
     date_publication: string | null;
+
+    // Numérotation tables (migration 20260309)
+    table_prefix_type: TablePrefixMode;
+    table_prefix_valeur: string | null;
+    table_separator: string;
+    table_padding: number;
+    table_continuity_scope: TableContinuityScope;
 
     created_by: string | null;
     created_at: string;
@@ -90,6 +102,8 @@ export interface CentreRow {
     code: string;
     ville: string | null;
     is_active: boolean;
+    code_departement?: string | null;
+    code_commune?: string | null;
     created_at: string;
     updated_at: string;
 }

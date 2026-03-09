@@ -44,7 +44,11 @@ export default function CandidatsPage() {
         {
             key: 'numero_table',
             header: 'Table',
-            cell: (row) => <span className="text-sm">{row.numero_table ?? '—'}</span>,
+            cell: (row) => (
+                <span className="text-sm font-medium">
+                    {row.numero_table_formate || row.numero_table || '—'}
+                </span>
+            ),
         },
         {
             key: 'salle_id',

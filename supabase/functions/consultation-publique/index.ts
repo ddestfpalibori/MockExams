@@ -39,6 +39,7 @@ interface ConsultationRequest {
 interface ConsultationResponse {
   candidat: {
     numero_anonyme: string;
+    numero_table: string | null;
     serie: string;
     etablissement: string;
   };
@@ -64,8 +65,8 @@ interface ErrorResponse {
 
 function lockoutSeconds(tentatives: number): number {
   if (tentatives >= 10) return 72 * 3600;
-  if (tentatives >= 7)  return 24 * 3600;
-  if (tentatives >= 6)  return 3600;
+  if (tentatives >= 7) return 24 * 3600;
+  if (tentatives >= 6) return 3600;
   return 0;
 }
 
@@ -154,12 +155,12 @@ Deno.serve(async (req: Request) => {
       }, 403);
     }
 
-    // ── 4. Résoudre candidat_id via numero_anonyme ─────────────────────────
+    // ── 4. Résoudre candidat_id via numero_anonyme OU numero_table_formate ──
     const { data: candidat } = await supabase
-      .from('candidats')
-      .select('id, numero_anonyme, series!inner(libelle), etablissements!inner(nom)')
+      .from('v_candidats_affichage' as any)
+      .select('id, numero_anonyme, numero_table_formate, series!inner(libelle), etablissements!inner(nom)')
       .eq('examen_id', examen_id)
-      .eq('numero_anonyme', numero_anonyme)
+      .or(`numero_anonyme.eq.${numero_anonyme},numero_table_formate.eq.${numero_anonyme}`)
       .maybeSingle();
 
     // Pas de court-circuit sur candidat introuvable — même message générique
@@ -170,12 +171,12 @@ Deno.serve(async (req: Request) => {
 
     const { data: codeEntry } = candidatId
       ? await supabase
-          .from('codes_acces')
-          .select('id, nb_connexions, expires_at, is_active')
-          .eq('candidat_id', candidatId)
-          .eq('code_hash', codeHash)
-          .eq('is_active', true)
-          .maybeSingle()
+        .from('codes_acces')
+        .select('id, nb_connexions, expires_at, is_active')
+        .eq('candidat_id', candidatId)
+        .eq('code_hash', codeHash)
+        .eq('is_active', true)
+        .maybeSingle()
       : { data: null };
 
     // ── 6. Échec d'authentification → incrémenter lockout ──────────────────
@@ -214,9 +215,9 @@ Deno.serve(async (req: Request) => {
       // Réinitialiser le compteur de lockout
       tentative
         ? supabase
-            .from('consultation_tentatives')
-            .update({ tentatives: 0, lockout_until: null, derniere_tentative: new Date().toISOString() })
-            .eq('id', tentative.id)
+          .from('consultation_tentatives')
+          .update({ tentatives: 0, lockout_until: null, derniere_tentative: new Date().toISOString() })
+          .eq('id', tentative.id)
         : Promise.resolve(),
       // Enregistrer la connexion réussie
       supabase
@@ -244,6 +245,7 @@ Deno.serve(async (req: Request) => {
 
     const c = candidat as {
       numero_anonyme: string;
+      numero_table_formate: string | null;
       series: { libelle: string };
       etablissements: { nom: string };
     };
@@ -251,6 +253,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       candidat: {
         numero_anonyme: c.numero_anonyme,
+        numero_table: c.numero_table_formate ?? null,
         serie: c.series.libelle,
         etablissement: c.etablissements.nom,
       },
