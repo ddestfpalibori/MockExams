@@ -75,4 +75,6 @@ _bmad-output/
 # Project Specific
 portal/dist/
 portal/node_modules/
+portal/.vite/
+portal/package-lock.json
 supabase/functions/*/node_modules/
