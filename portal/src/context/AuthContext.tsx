@@ -53,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const hasPermission = (requiredRoles: Role[]) => {
         if (!role) return false;
+        if (role === 'admin') return true; // admin accède à tout
         return requiredRoles.includes(role);
     };
 
