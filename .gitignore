@@ -68,6 +68,7 @@ dist/workbox-*.js
 .sentryclirc
 
 # Assistant & IA
+claude.md
 .claude/
 .gemini/
 _bmad-output/
