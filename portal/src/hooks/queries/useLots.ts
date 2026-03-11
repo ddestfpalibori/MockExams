@@ -56,7 +56,21 @@ export function useSignerLot(centreId: string, examenId: string) {
             queryClient.invalidateQueries({
                 queryKey: QUERY_KEYS.centres.lots(centreId, examenId),
             });
-            toast.success('Lot signé (HMAC généré)');
+            toast.success('Lot signé (signature générée)');
+        },
+    });
+}
+
+export function useResetLotHmac(centreId: string, examenId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (lotId: string) => lotService.resetLotHmac(lotId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: QUERY_KEYS.centres.lots(centreId, examenId),
+            });
+            toast.success('Signature réinitialisée');
         },
     });
 }

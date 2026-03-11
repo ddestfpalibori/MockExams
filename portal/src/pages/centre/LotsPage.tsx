@@ -1,31 +1,42 @@
 import { useState } from 'react';
 import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
-import { useLots, useSignerLot } from '@/hooks/queries/useLots';
+import { useLots, useSignerLot, useResetLotHmac } from '@/hooks/queries/useLots';
+import { useAuth } from '@/hooks/useAuth';
 import { EntitySelector } from '@/components/ui/EntitySelector';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
 import { LotStatusBadge } from '@/components/ui/StatusBadge';
 import { Modal } from '@/components/ui/Modal';
-import { KeyRound, Package } from 'lucide-react';
+import { KeyRound, Package, RotateCcw } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 import type { LotWithDetails } from '@/services/lots';
 
 export default function LotsPage() {
     const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
+    const { role } = useAuth();
+    const isAdmin = role === 'admin';
 
     const { data: examens } = useExamens();
     const [examenId, setExamenId] = useState('');
 
     const { data: lots, isLoading } = useLots(centreId, examenId);
     const signerLot = useSignerLot(centreId, examenId);
+    const resetLotHmac = useResetLotHmac(centreId, examenId);
 
     const [signerTarget, setSignerTarget] = useState<LotWithDetails | null>(null);
+    const [resetTarget, setResetTarget] = useState<LotWithDetails | null>(null);
 
     const handleSigner = async () => {
         if (!signerTarget) return;
         await signerLot.mutateAsync(signerTarget.id);
         setSignerTarget(null);
+    };
+
+    const handleReset = async () => {
+        if (!resetTarget) return;
+        await resetLotHmac.mutateAsync(resetTarget.id);
+        setResetTarget(null);
     };
 
     const columns: Column<LotWithDetails>[] = [
@@ -67,7 +78,7 @@ export default function LotsPage() {
         },
         {
             key: 'hmac',
-            header: 'HMAC',
+            header: 'Signature',
             cell: (row) =>
                 row.hmac_signature ? (
                     <span className="font-mono text-xs text-success truncate max-w-[100px] block">
@@ -92,6 +103,16 @@ export default function LotsPage() {
                             Signer
                         </Button>
                     )}
+                    {isAdmin && row.hmac_signature && row.status === 'EN_ATTENTE' && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setResetTarget(row)}
+                        >
+                            <RotateCcw className="mr-1 h-3 w-3" />
+                            Réinitialiser la signature
+                        </Button>
+                    )}
                 </div>
             ),
         },
@@ -105,7 +126,7 @@ export default function LotsPage() {
                         Lots de correction
                     </h1>
                     <p className="text-slate-500">
-                        Gérez les lots de copies par discipline et signez-les (HMAC).
+                        Gérez les lots de copies par discipline et signez-les (signature).
                     </p>
                 </div>
             </div>
@@ -140,7 +161,7 @@ export default function LotsPage() {
                     <p className="text-sm text-blue-800">
                         <strong>Workflow :</strong> Les lots sont créés via la fonction F06
                         (automatiquement depuis ExamenDetailPage). Signez chaque lot pour générer
-                        son HMAC anti-replay avant de le distribuer aux correcteurs.
+                        sa signature anti-replay avant de le distribuer aux correcteurs.
                     </p>
                 </div>
             )}
@@ -178,7 +199,7 @@ export default function LotsPage() {
                         </Button>
                         <Button onClick={handleSigner} isLoading={signerLot.isPending}>
                             <KeyRound className="mr-2 h-4 w-4" />
-                            Signer (HMAC)
+                            Signer (signature)
                         </Button>
                     </div>
                 }
@@ -190,9 +211,40 @@ export default function LotsPage() {
                         {signerTarget?.discipline_libelle}.
                     </p>
                     <p className="text-sm text-slate-500">
-                        La signature génère un HMAC unique qui sera intégré dans le bon de
-                        correction remis aux correcteurs. Il permet de vérifier l'intégrité des
+                        La signature génère une empreinte unique qui sera intégrée dans le bon de
+                        correction remis aux correcteurs. Elle permet de vérifier l'intégrité des
                         notes lors de la saisie.
+                    </p>
+                </div>
+            </Modal>
+
+            {/* Modal réinitialisation signature */}
+            <Modal
+                open={!!resetTarget}
+                onOpenChange={(o) => { if (!o) setResetTarget(null); }}
+                title="Réinitialiser la signature"
+                variant="danger"
+                footer={
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setResetTarget(null)}>
+                            Annuler
+                        </Button>
+                        <Button variant="danger" onClick={handleReset} isLoading={resetLotHmac.isPending}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Réinitialiser
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-3">
+                    <p className="text-slate-600">
+                        Vous allez réinitialiser la signature du lot{' '}
+                        <strong>#{resetTarget?.lot_numero}</strong> —{' '}
+                        {resetTarget?.discipline_libelle}.
+                    </p>
+                    <p className="text-sm text-slate-500">
+                        Cette action invalide le fichier Excel signé existant. Utilisez-la
+                        uniquement si le lot n'a pas encore été distribué.
                     </p>
                 </div>
             </Modal>

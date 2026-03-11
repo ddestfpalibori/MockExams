@@ -6,28 +6,19 @@
  * Rôle : signer les métadonnées _meta d'un lot avant génération du fichier Excel
  *
  * POST /functions/v1/sign-lot
- * Body : SignLotRequest
+ * Body : { lot_id: string, generation_timestamp?: string }
  * Réponse : SignLotResponse
  */
 
 import { handleCors, corsHeaders } from '../_shared/cors.ts';
-import { requireAuth, AuthError } from '../_shared/auth.ts';
+import { requireAuth, createServiceClient, AuthError } from '../_shared/auth.ts';
 import { signLotMeta, LotMeta } from '../_shared/hmac.ts';
 
 // ─── Contrat API ──────────────────────────────────────────────────────────────
 
 interface SignLotRequest {
-  centre_id: string;
-  examen_id: string;
-  /** lots.examen_discipline_id */
-  matiere_id: string;
-  serie_id: string;
-  /** '' si pas d'option facultative */
-  option_id: string;
-  lot_numero: number;
-  /** lots.nb_copies — nombre de copies dans CE lot (≠ total élèves du centre) */
-  nb_copies: number;
-  generation_timestamp: string; // ISO 8601
+  lot_id: string;
+  generation_timestamp?: string; // ISO 8601 (optionnel)
 }
 
 interface SignLotResponse {
@@ -55,7 +46,7 @@ function validateRequest(body: unknown): SignLotRequest {
   }
 
   const b = body as Record<string, unknown>;
-  const required = ['centre_id', 'examen_id', 'matiere_id', 'serie_id', 'option_id', 'lot_numero', 'nb_copies', 'generation_timestamp'];
+  const required = ['lot_id'];
 
   for (const field of required) {
     if (b[field] === undefined || b[field] === null) {
@@ -63,14 +54,14 @@ function validateRequest(body: unknown): SignLotRequest {
     }
   }
 
-  if (typeof b.lot_numero !== 'number' || b.lot_numero < 1) {
-    throw new ValidationError('lot_numero doit être un entier ≥ 1');
+  if (typeof b.lot_id !== 'string' || b.lot_id.trim().length < 10) {
+    throw new ValidationError('lot_id invalide');
   }
-  if (typeof b.nb_copies !== 'number' || b.nb_copies < 1) {
-    throw new ValidationError('nb_copies doit être un entier ≥ 1');
-  }
-  if (isNaN(new Date(b.generation_timestamp as string).getTime())) {
-    throw new ValidationError('generation_timestamp invalide — format ISO 8601 requis');
+  if (b.generation_timestamp !== undefined) {
+    if (typeof b.generation_timestamp !== 'string' ||
+        isNaN(new Date(b.generation_timestamp).getTime())) {
+      throw new ValidationError('generation_timestamp invalide — format ISO 8601 requis');
+    }
   }
 
   return b as unknown as SignLotRequest;
@@ -87,25 +78,90 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { role } = await requireAuth(req);
-    if (role !== 'admin') {
-      return json({ error: 'Accès refusé — rôle admin requis', code: 'FORBIDDEN' }, 403);
+    const { userId, role } = await requireAuth(req);
+    if (role !== 'admin' && role !== 'chef_centre') {
+      return json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
     }
 
     const input = validateRequest(await req.json());
+    const supabase = createServiceClient();
+
+    const { data: lot, error: lotError } = await supabase
+      .from('lots')
+      .select('id, centre_id, examen_id, examen_discipline_id, serie_id, lot_numero, nb_copies, status, hmac_signature')
+      .eq('id', input.lot_id)
+      .single();
+
+    if (lotError || !lot) {
+      return json({ error: 'Lot introuvable', code: 'LOT_NOT_FOUND' }, 404);
+    }
+    if (lot.status !== 'EN_ATTENTE') {
+      return json({ error: 'Lot non signable (statut invalide)', code: 'LOT_STATUS_INVALID' }, 422);
+    }
+    if (lot.hmac_signature) {
+      return json({ error: 'Lot déjà signé', code: 'LOT_ALREADY_SIGNED' }, 409);
+    }
+    if (lot.nb_copies < 1) {
+      return json({ error: 'Lot vide — aucune copie à signer', code: 'LOT_EMPTY' }, 422);
+    }
+
+    if (role === 'chef_centre') {
+      const { data: access } = await supabase
+        .from('user_centres')
+        .select('centre_id')
+        .eq('user_id', userId)
+        .eq('centre_id', lot.centre_id)
+        .single();
+
+      if (!access) {
+        return json({ error: 'Ce centre ne vous est pas affecté', code: 'CENTRE_ACCESS_DENIED' }, 403);
+      }
+    }
+
+    const { data: discipline, error: discError } = await supabase
+      .from('examen_disciplines')
+      .select('type')
+      .eq('id', lot.examen_discipline_id)
+      .single();
+
+    if (discError || !discipline) {
+      return json({ error: 'Discipline introuvable', code: 'DISCIPLINE_NOT_FOUND' }, 404);
+    }
+
+    const generation_timestamp = input.generation_timestamp ?? new Date().toISOString();
+    const option_id = discipline.type === 'facultatif' ? lot.examen_discipline_id : '';
+    const serie_id = lot.serie_id ?? '';
 
     const meta: LotMeta = {
-      centre_id: input.centre_id,
-      examen_id: input.examen_id,
-      matiere_id: input.matiere_id,
-      serie_id: input.serie_id,
-      option_id: input.option_id,
-      lot_numero: input.lot_numero,
-      nb_copies: input.nb_copies,
-      generation_timestamp: input.generation_timestamp,
+      centre_id: lot.centre_id,
+      examen_id: lot.examen_id,
+      matiere_id: lot.examen_discipline_id,
+      serie_id,
+      option_id,
+      lot_numero: lot.lot_numero,
+      nb_copies: lot.nb_copies,
+      generation_timestamp,
     };
 
-    return json({ hmac_signature: await signLotMeta(meta), generation_timestamp: input.generation_timestamp }, 200);
+    const hmac_signature = await signLotMeta(meta);
+
+    const { data: updated, error: updateError } = await supabase
+      .from('lots')
+      .update({ hmac_signature, generation_timestamp })
+      .eq('id', lot.id)
+      .eq('status', 'EN_ATTENTE')
+      .select('id')
+      .maybeSingle();
+
+    if (updateError) {
+      console.error('[sign-lot] Erreur mise à jour lot:', updateError);
+      return json({ error: 'Erreur lors de la signature du lot', code: 'LOT_UPDATE_ERROR' }, 500);
+    }
+    if (!updated) {
+      return json({ error: 'Lot non signable (statut invalide)', code: 'LOT_STATUS_INVALID' }, 422);
+    }
+
+    return json({ hmac_signature, generation_timestamp }, 200);
   } catch (err) {
     if (err instanceof AuthError) {
       return json({ error: err.message, code: 'UNAUTHORIZED' }, 401);

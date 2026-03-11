@@ -47,9 +47,10 @@ export const queryClient = new QueryClient({
   },
   mutationCache: new MutationCache({
     onError: (error: unknown) => {
-      const err = error as { message?: string; name?: string };
+      const err = error as { message?: string; name?: string; context?: { json?: { error?: string } } };
       if (err?.name === 'AbortError') return; // Silencieux si annulé
-      toast.error(err?.message || 'Une erreur est survenue');
+      const msg = err?.context?.json?.error ?? err?.message ?? 'Une erreur est survenue';
+      toast.error(msg);
     },
   }),
 });

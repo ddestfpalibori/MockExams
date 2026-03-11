@@ -73,9 +73,18 @@ export const lotService = {
         return data as number;
     },
 
-    /** Signe un lot via Edge Function sign-lot (génère HMAC) */
+    /** Signe un lot via Edge Function sign-lot (génère une signature) */
     async signerLot(lotId: string): Promise<void> {
         const { error } = await supabase.functions.invoke('sign-lot', {
+            body: { lot_id: lotId },
+        });
+
+        if (error) throw error;
+    },
+
+    /** Réinitialise la signature d'un lot (admin only) */
+    async resetLotHmac(lotId: string): Promise<void> {
+        const { error } = await supabase.functions.invoke('reset-lot-hmac', {
             body: { lot_id: lotId },
         });
 
