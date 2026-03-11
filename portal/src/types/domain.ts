@@ -45,6 +45,7 @@ export interface ExamenRow {
     rattrapage_actif: boolean;
 
     // Paramètres anonymat & composition
+    anonymat_actif: boolean;
     anonymat_prefixe: string;
     anonymat_debut: number;
     anonymat_bon: number;

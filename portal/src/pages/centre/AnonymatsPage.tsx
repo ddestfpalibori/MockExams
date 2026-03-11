@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useGenererAnonymats } from '@/hooks/queries/useLots';
+import { centreService } from '@/services/centres';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EntitySelector } from '@/components/ui/EntitySelector';
 import { Hash, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import type { ExamenRow } from '@/types/domain';
 
 export default function AnonymatsPage() {
@@ -27,6 +29,23 @@ export default function AnonymatsPage() {
         setConfirmOpen(false);
     };
 
+    const openConfirm = async () => {
+        if (!examenId || !centreId) return;
+        if (!anonymatActif) {
+            try {
+                const missing = await centreService.countMissingTableNumbers(centreId, examenId);
+                if (missing > 0) {
+                    toast.error(`Numéros de table manquants pour ${missing} candidat(s).`);
+                    return;
+                }
+            } catch {
+                toast.error('Vérification des numéros de table impossible.');
+                return;
+            }
+        }
+        setConfirmOpen(true);
+    };
+
     const examensEligibles = (examens ?? []).filter(
         (e: ExamenRow) =>
             e.status === 'INSCRIPTIONS' ||
@@ -34,14 +53,19 @@ export default function AnonymatsPage() {
             e.status === 'CORRECTION'
     );
 
+    const anonymatActif = examenSelectionne?.anonymat_actif ?? true;
+
     return (
         <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                    Numéros anonymes
+                    {anonymatActif ? 'Numéros anonymes' : 'Identifiants de saisie'}
                 </h1>
                 <p className="text-slate-500">
-                    Générez les numéros d'anonymat pour les candidats de votre centre (F05).
+                    {anonymatActif
+                        ? 'Générez les numéros d\'anonymat pour les candidats de votre centre (F05).'
+                        : 'Générez les identifiants basés sur les numéros de table pour les candidats de votre centre (F05).'}
+                    {' '}
                     Cette opération est idempotente : sûre à relancer.
                 </p>
             </div>
@@ -90,18 +114,23 @@ export default function AnonymatsPage() {
 
                 <div className="rounded-md bg-blue-50 border border-blue-200 p-4">
                     <p className="text-sm text-blue-800">
-                        <strong>Idempotent :</strong> Les candidats qui ont déjà un numéro anonyme
-                        ne sont pas modifiés. Seuls les candidats sans numéro reçoivent un nouveau
-                        numéro séquentiel dans la plage de l'examen.
+                        <strong>Idempotent :</strong> Les candidats qui ont déjà un identifiant
+                        ne sont pas modifiés. Seuls les candidats sans identifiant reçoivent un
+                        nouveau numéro dans la plage de l'examen.
                     </p>
+                    {!anonymatActif && (
+                        <p className="text-sm text-blue-800 mt-2">
+                            <strong>Pré-requis :</strong> les numéros de table doivent déjà être affectés.
+                        </p>
+                    )}
                 </div>
 
                 <Button
-                    onClick={() => setConfirmOpen(true)}
+                    onClick={openConfirm}
                     disabled={!examenId || !centreId}
                 >
                     <Hash className="mr-2 h-4 w-4" />
-                    Générer les numéros anonymes
+                    {anonymatActif ? 'Générer les numéros anonymes' : 'Générer les identifiants'}
                 </Button>
             </div>
 
@@ -111,7 +140,7 @@ export default function AnonymatsPage() {
                     <div>
                         <p className="font-semibold text-success">Génération réussie</p>
                         <p className="text-sm text-slate-600">
-                            {lastResult} numéro(s) anonyme(s) généré(s).
+                            {lastResult} {anonymatActif ? 'numéro(s) anonyme(s)' : 'identifiant(s)'} généré(s).
                         </p>
                     </div>
                 </div>
@@ -120,7 +149,7 @@ export default function AnonymatsPage() {
             <Modal
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
-                title="Générer les numéros anonymes"
+                title={anonymatActif ? 'Générer les numéros anonymes' : 'Générer les identifiants'}
                 footer={
                     <div className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setConfirmOpen(false)}>
@@ -133,9 +162,9 @@ export default function AnonymatsPage() {
                 }
             >
                 <p className="text-slate-600">
-                    Vous allez générer les numéros anonymes pour les candidats de l'examen{' '}
-                    <strong>{examenSelectionne?.libelle}</strong> dans votre centre. Les candidats
-                    déjà numérotés ne sont pas affectés.
+                    Vous allez générer {anonymatActif ? 'les numéros anonymes' : 'les identifiants'}
+                    {' '}pour les candidats de l'examen <strong>{examenSelectionne?.libelle}</strong>
+                    {' '}dans votre centre. Les candidats déjà numérotés ne sont pas affectés.
                 </p>
             </Modal>
         </div>

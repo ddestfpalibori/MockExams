@@ -12,6 +12,7 @@ interface ConsultationResult {
 }
 
 interface ConsultationResponse {
+    anonymat_actif: boolean;
     candidat: {
         numero_anonyme: string;
         numero_table: string | null;
@@ -28,6 +29,7 @@ export default function ConsultationPage() {
     const [searching, setSearching] = useState(false);
     const [result, setResult] = useState<ConsultationResult | null | 'not_found'>(null);
     const [candidatInfo, setCandidatInfo] = useState<ConsultationResponse['candidat'] | null>(null);
+    const [anonymatActif, setAnonymatActif] = useState<boolean | null>(null);
     const [lockoutUntil, setLockoutUntil] = useState<Date | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,6 +42,7 @@ export default function ConsultationPage() {
         setSearching(true);
         setResult(null);
         setCandidatInfo(null);
+        setAnonymatActif(null);
         setError(null);
 
         try {
@@ -78,6 +81,7 @@ export default function ConsultationPage() {
             }
 
             setCandidatInfo(data.candidat);
+            setAnonymatActif(data.anonymat_actif);
             setResult(data.resultat);
         } catch {
             setError('Une erreur de connexion est survenue. Vérifiez votre connexion internet.');
@@ -89,6 +93,7 @@ export default function ConsultationPage() {
     const reset = () => {
         setResult(null);
         setCandidatInfo(null);
+        setAnonymatActif(null);
         setError(null);
         setNumeroAnonyme('');
         setCodeAcces('');
@@ -116,7 +121,7 @@ export default function ConsultationPage() {
                             Consultez votre résultat
                         </h2>
                         <p className="text-slate-500 mt-1">
-                            Saisissez le code de l'examen et votre numéro anonyme.
+                            Saisissez le code de l'examen et votre identifiant.
                         </p>
                     </div>
 
@@ -143,13 +148,13 @@ export default function ConsultationPage() {
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                                    Numéro anonyme
+                                    Identifiant (numéro anonyme ou numéro de table)
                                 </label>
                                 <input
                                     type="text"
                                     value={numeroAnonyme}
                                     onChange={(e) => setNumeroAnonyme(e.target.value)}
-                                    placeholder="Ex: 001234"
+                                    placeholder="Ex: 001234 ou C01-0042"
                                     className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm uppercase font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary"
                                     required
                                     disabled={!!isLocked}
@@ -200,7 +205,9 @@ export default function ConsultationPage() {
                     {result && result !== 'not_found' && (
                         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
                             <div className="text-center">
-                                <p className="text-sm text-slate-500 mb-1">N° anonyme : {candidatInfo?.numero_anonyme ?? numeroAnonyme}</p>
+                                <p className="text-sm text-slate-500 mb-1">
+                                    {anonymatActif === false ? 'Identifiant' : 'N° anonyme'} : {candidatInfo?.numero_anonyme ?? numeroAnonyme}
+                                </p>
                                 {candidatInfo?.numero_table && (
                                     <p className="text-sm text-slate-500 mb-1">N° table : {candidatInfo.numero_table}</p>
                                 )}
@@ -250,7 +257,7 @@ export default function ConsultationPage() {
                                 <p className="font-semibold text-slate-700">Résultat non trouvé</p>
                                 <p className="text-sm text-slate-500 mt-1">
                                     Aucun résultat ne correspond à ces informations. Vérifiez le
-                                    code de l'examen et votre numéro anonyme.
+                                    code de l'examen et votre identifiant.
                                 </p>
                             </div>
                             <Button variant="outline" onClick={reset}>

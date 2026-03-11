@@ -37,6 +37,7 @@ interface ConsultationRequest {
 }
 
 interface ConsultationResponse {
+  anonymat_actif: boolean;
   candidat: {
     numero_anonyme: string;
     numero_table: string | null;
@@ -127,7 +128,7 @@ Deno.serve(async (req: Request) => {
     // ── 2. Résoudre examen_code → examen_id + vérifier que l'examen est publié
     const { data: examen } = await supabase
       .from('examens')
-      .select('id, status')
+      .select('id, status, anonymat_actif')
       .eq('code', examen_code.toUpperCase())
       .maybeSingle();
 
@@ -251,6 +252,7 @@ Deno.serve(async (req: Request) => {
     };
 
     return new Response(JSON.stringify({
+      anonymat_actif: examen.anonymat_actif,
       candidat: {
         numero_anonyme: c.numero_anonyme,
         numero_table: c.numero_table_formate ?? null,

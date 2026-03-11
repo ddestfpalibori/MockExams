@@ -809,6 +809,7 @@ export type Database = {
       examens: {
         Row: {
           annee: number
+          anonymat_actif: boolean
           anonymat_bon: number
           anonymat_debut: number
           anonymat_prefixe: string
@@ -842,6 +843,7 @@ export type Database = {
         }
         Insert: {
           annee: number
+          anonymat_actif?: boolean
           anonymat_bon?: number
           anonymat_debut?: number
           anonymat_prefixe?: string
@@ -875,6 +877,7 @@ export type Database = {
         }
         Update: {
           annee?: number
+          anonymat_actif?: boolean
           anonymat_bon?: number
           anonymat_debut?: number
           anonymat_prefixe?: string

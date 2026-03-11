@@ -132,6 +132,20 @@ export const centreService = {
         return data as number;
     },
 
+    /** Vérifie si des numéros de table manquent (pré-check UI) */
+    async countMissingTableNumbers(centreId: string, examenId: string): Promise<number> {
+        const { count, error } = await supabase
+            .from('candidats')
+            .select('id', { count: 'exact', head: true })
+            .eq('centre_id', centreId)
+            .eq('examen_id', examenId)
+            .is('numero_anonyme', null)
+            .is('numero_table', null);
+
+        if (error) throw error;
+        return count ?? 0;
+    },
+
     /** Met à jour un centre */
     async updateCentre(id: string, input: Partial<CentreRow>): Promise<CentreRow> {
         const { data, error } = await supabase
