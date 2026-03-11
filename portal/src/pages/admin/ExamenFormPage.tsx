@@ -174,7 +174,7 @@ function ConfirmationStep({ control }: { control: Control<FormValues> }) {
         { label: 'Bon de correction', value: String(values.anonymat_bon ?? '') },
         { label: 'Taille salle référence', value: `${values.taille_salle_ref ?? ''} places` },
         { label: 'Modèle distribution', value: values.distribution_model ?? '' },
-        { label: 'Validité HMAC', value: `${values.hmac_window_days ?? ''} jours` },
+        { label: 'Validité de la signature', value: `${values.hmac_window_days ?? ''} jours` },
         { label: 'Début composition', value: values.date_composition_debut || '—' },
         { label: 'Fin composition', value: values.date_composition_fin || '—' },
         { label: 'Préfixe Table', value: values.table_prefix_type ?? '—' },
@@ -425,8 +425,8 @@ export default function ExamenFormPage() {
                                         min={1}
                                     />
                                 </FormField>
-                                <FormField label="Fenêtre HMAC (jours)" required error={errors.hmac_window_days?.message}
-                                    hint="Validité anti-replay des lots">
+                            <FormField label="Durée de validité de la signature (jours)" required error={errors.hmac_window_days?.message}
+                                hint="Signature du fichier Excel de saisie des notes (lot)">
                                     <Input
                                         type="number"
                                         {...register('hmac_window_days', { valueAsNumber: true })}
