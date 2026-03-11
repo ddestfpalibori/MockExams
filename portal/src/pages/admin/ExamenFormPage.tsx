@@ -21,7 +21,7 @@ const schema = z.object({
 
     // Étape 2 — Composition
     anonymat_actif: z.boolean(),
-    anonymat_prefixe: z.string().min(1, 'Requis').max(10, 'Max 10 caractères'),
+    anonymat_prefixe: z.string().max(10, 'Max 10 caractères'),
     anonymat_debut: z.number().int().min(1, 'Minimum 1'),
     anonymat_bon: z.number().int().refine((v) => [1, 3, 5].includes(v), 'Valeurs autorisées : 1, 3 ou 5'),
     taille_salle_ref: z.number().int().min(1, 'Minimum 1 place'),
@@ -64,6 +64,11 @@ const schema = z.object({
     (v) => v.table_prefix_type !== 'FIXE'
         || (v.table_prefix_valeur != null && v.table_prefix_valeur.trim().length > 0),
     { message: 'La valeur fixe est requise en mode FIXE', path: ['table_prefix_valeur'] }
+)
+// Préfixe anonymat requis seulement si anonymat activé
+.refine(
+    (v) => !v.anonymat_actif || v.anonymat_prefixe.trim().length >= 1,
+    { message: 'Requis', path: ['anonymat_prefixe'] }
 );
 
 type FormValues = z.infer<typeof schema>;
