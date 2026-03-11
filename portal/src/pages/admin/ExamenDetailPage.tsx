@@ -83,6 +83,9 @@ export default function ExamenDetailPage() {
     }
 
     const isConfig = examen.status === 'CONFIG';
+    const canOpenInscriptions = !statsLoading
+        && (stats?.nb_disciplines ?? 0) > 0
+        && (stats?.nb_centres ?? 0) > 0;
 
     const handleTransition = async () => {
         if (!transitionTarget) return;
@@ -117,7 +120,15 @@ export default function ExamenDetailPage() {
                         </Button>
                     )}
                     {examen.status === 'CONFIG' && (
-                        <Button onClick={() => setTransitionTarget('INSCRIPTIONS')}>
+                        <Button
+                            onClick={() => setTransitionTarget('INSCRIPTIONS')}
+                            disabled={!canOpenInscriptions}
+                            title={
+                                !canOpenInscriptions
+                                    ? 'Configurez au moins une discipline et un centre avant d\'ouvrir les inscriptions'
+                                    : undefined
+                            }
+                        >
                             <Play className="mr-2 h-4 w-4" />
                             Ouvrir Inscriptions
                         </Button>

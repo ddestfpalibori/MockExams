@@ -20,9 +20,10 @@ const schema = z.object({
     annee: z.number().int().min(2000, 'Année invalide').max(2100, 'Année invalide'),
 
     // Étape 2 — Composition
+    anonymat_actif: z.boolean(),
     anonymat_prefixe: z.string().min(1, 'Requis').max(10, 'Max 10 caractères'),
     anonymat_debut: z.number().int().min(1, 'Minimum 1'),
-    anonymat_bon: z.number().int().min(0, 'Minimum 0'),
+    anonymat_bon: z.number().int().refine((v) => [1, 3, 5].includes(v), 'Valeurs autorisées : 1, 3 ou 5'),
     taille_salle_ref: z.number().int().min(1, 'Minimum 1 place'),
     distribution_model: z.enum(['A', 'B'] as const),
     hmac_window_days: z.number().int().min(1, 'Minimum 1').max(365, 'Maximum 365 jours'),
@@ -45,7 +46,25 @@ const schema = z.object({
     oral_actif: z.boolean(),
     eps_active: z.boolean(),
     facultatif_actif: z.boolean(),
-});
+})
+// Dates cohérentes : début <= fin
+.refine(
+    (v) => !v.date_composition_debut || !v.date_composition_fin
+        || v.date_composition_debut <= v.date_composition_fin,
+    { message: 'La date de fin doit être postérieure ou égale au début', path: ['date_composition_fin'] }
+)
+// Seuil rattrapage strictement inférieur au seuil phase 2 (contrainte DB)
+.refine(
+    (v) => !v.rattrapage_actif || v.seuil_rattrapage == null
+        || v.seuil_rattrapage < v.seuil_phase2,
+    { message: 'Le seuil rattrapage doit être inférieur au seuil phase 2', path: ['seuil_rattrapage'] }
+)
+// Valeur fixe requise si mode FIXE
+.refine(
+    (v) => v.table_prefix_type !== 'FIXE'
+        || (v.table_prefix_valeur != null && v.table_prefix_valeur.trim().length > 0),
+    { message: 'La valeur fixe est requise en mode FIXE', path: ['table_prefix_valeur'] }
+);
 
 type FormValues = z.infer<typeof schema>;
 
@@ -57,9 +76,10 @@ const DEFAULT_VALUES: FormValues = {
     code: '',
     libelle: '',
     annee: new Date().getFullYear(),
+    anonymat_actif: true,
     anonymat_prefixe: 'AN',
     anonymat_debut: 1,
-    anonymat_bon: 0,
+    anonymat_bon: 1,
     taille_salle_ref: 50,
     distribution_model: 'A',
     hmac_window_days: 30,
@@ -124,7 +144,7 @@ function Stepper({ current }: { current: number }) {
 
 interface ToggleFieldProps {
     control: Control<FormValues>;
-    name: keyof Pick<FormValues, 'rattrapage_actif' | 'oral_actif' | 'eps_active' | 'facultatif_actif'>;
+    name: keyof Pick<FormValues, 'rattrapage_actif' | 'oral_actif' | 'eps_active' | 'facultatif_actif' | 'anonymat_actif'>;
     label: string;
     hint?: string;
 }
@@ -169,9 +189,12 @@ function ConfirmationStep({ control }: { control: Control<FormValues> }) {
         { label: 'Code', value: values.code ?? '' },
         { label: 'Intitulé', value: values.libelle ?? '' },
         { label: 'Année de session', value: String(values.annee ?? '') },
-        { label: 'Préfixe anonymat', value: values.anonymat_prefixe ?? '' },
-        { label: 'N° de départ', value: String(values.anonymat_debut ?? '') },
-        { label: 'Bon de correction', value: String(values.anonymat_bon ?? '') },
+        { label: 'Anonymat', value: values.anonymat_actif ? 'Activé' : 'Désactivé (identifiant = numéro de table)' },
+        ...(values.anonymat_actif ? [
+            { label: 'Préfixe anonymat', value: values.anonymat_prefixe ?? '' },
+            { label: 'N° de départ', value: String(values.anonymat_debut ?? '') },
+            { label: 'Bon de correction', value: String(values.anonymat_bon ?? '') },
+        ] : []),
         { label: 'Taille salle référence', value: `${values.taille_salle_ref ?? ''} places` },
         { label: 'Modèle distribution', value: values.distribution_model ?? '' },
         { label: 'Validité de la signature', value: `${values.hmac_window_days ?? ''} jours` },
@@ -246,6 +269,7 @@ export default function ExamenFormPage() {
     // Champs conditionnels (réactifs)
     const modeDelib = useWatch({ control, name: 'mode_deliberation' });
     const rattrapageActif = useWatch({ control, name: 'rattrapage_actif' });
+    const anonymatActif = useWatch({ control, name: 'anonymat_actif' });
 
     // Préremplissage en mode édition
     useEffect(() => {
@@ -254,6 +278,7 @@ export default function ExamenFormPage() {
                 code: examen.code,
                 libelle: examen.libelle,
                 annee: examen.annee,
+                anonymat_actif: examen.anonymat_actif ?? true,
                 anonymat_prefixe: examen.anonymat_prefixe,
                 anonymat_debut: examen.anonymat_debut,
                 anonymat_bon: examen.anonymat_bon,
@@ -270,11 +295,11 @@ export default function ExamenFormPage() {
                 oral_actif: examen.oral_actif,
                 eps_active: examen.eps_active,
                 facultatif_actif: examen.facultatif_actif,
-                table_prefix_type: (examen as any).table_prefix_type || 'CENTRE',
-                table_prefix_valeur: (examen as any).table_prefix_valeur || null,
-                table_separator: (examen as any).table_separator || '-',
-                table_padding: (examen as any).table_padding || 4,
-                table_continuity_scope: (examen as any).table_continuity_scope || 'CENTRE',
+                table_prefix_type: examen.table_prefix_type ?? 'CENTRE',
+                table_prefix_valeur: examen.table_prefix_valeur ?? null,
+                table_separator: examen.table_separator ?? '-',
+                table_padding: examen.table_padding ?? 4,
+                table_continuity_scope: examen.table_continuity_scope ?? 'CENTRE',
             });
         }
     }, [isEdit, examen, reset]);
@@ -288,7 +313,8 @@ export default function ExamenFormPage() {
             valid = await trigger([
                 'anonymat_prefixe', 'anonymat_debut', 'anonymat_bon',
                 'taille_salle_ref', 'distribution_model', 'hmac_window_days',
-                'table_prefix_type', 'table_separator', 'table_padding', 'table_continuity_scope',
+                'table_prefix_type', 'table_prefix_valeur', 'table_separator', 'table_padding', 'table_continuity_scope',
+                'date_composition_debut', 'date_composition_fin',
             ]);
         } else if (step === 3) {
             const fields: (keyof FormValues)[] = ['mode_deliberation', 'seuil_phase1'];
@@ -394,63 +420,8 @@ export default function ExamenFormPage() {
                             <h2 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3">
                                 Paramètres de composition
                             </h2>
-                            <div className="grid grid-cols-3 gap-3">
-                                <FormField label="Préfixe anonymat" required error={errors.anonymat_prefixe?.message}
-                                    hint="Ex: AN, BEPC">
-                                    <Input {...register('anonymat_prefixe')} placeholder="AN" />
-                                </FormField>
-                                <FormField label="N° de départ" required error={errors.anonymat_debut?.message}
-                                    hint="Premier numéro">
-                                    <Input
-                                        type="number"
-                                        {...register('anonymat_debut', { valueAsNumber: true })}
-                                        min={1}
-                                    />
-                                </FormField>
-                                <FormField label="Bon de correction" required error={errors.anonymat_bon?.message}
-                                    hint="Offset (ex: 0, 1000)">
-                                    <Input
-                                        type="number"
-                                        {...register('anonymat_bon', { valueAsNumber: true })}
-                                        min={0}
-                                    />
-                                </FormField>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <FormField label="Capacité salle référence" required error={errors.taille_salle_ref?.message}
-                                    hint="Nb de places par salle type">
-                                    <Input
-                                        type="number"
-                                        {...register('taille_salle_ref', { valueAsNumber: true })}
-                                        min={1}
-                                    />
-                                </FormField>
-                            <FormField label="Durée de validité de la signature (jours)" required error={errors.hmac_window_days?.message}
-                                hint="Signature du fichier Excel de saisie des notes (lot)">
-                                    <Input
-                                        type="number"
-                                        {...register('hmac_window_days', { valueAsNumber: true })}
-                                        min={1}
-                                        max={365}
-                                    />
-                                </FormField>
-                            </div>
-                            <FormField label="Modèle de distribution des copies" required>
-                                <Select {...register('distribution_model')}>
-                                    <option value="A">Modèle A — Standard</option>
-                                    <option value="B">Modèle B — Alterné</option>
-                                </Select>
-                            </FormField>
-                            <div className="grid grid-cols-2 gap-3">
-                                <FormField label="Début de composition">
-                                    <Input type="date" {...register('date_composition_debut')} />
-                                </FormField>
-                                <FormField label="Fin de composition">
-                                    <Input type="date" {...register('date_composition_fin')} />
-                                </FormField>
-                            </div>
 
-                            <div className="pt-4 border-t border-slate-100 space-y-4">
+                            <div className="pt-2 space-y-4">
                                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                     Numérotation des tables
                                 </p>
@@ -488,6 +459,91 @@ export default function ExamenFormPage() {
                                             min={1}
                                             max={10}
                                         />
+                                    </FormField>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 space-y-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                    Anonymat
+                                </p>
+                                <ToggleField
+                                    control={control}
+                                    name="anonymat_actif"
+                                    label="Anonymat activé"
+                                    hint="Si désactivé, l'identifiant est basé sur le numéro de table"
+                                />
+                                <div className="grid grid-cols-3 gap-3">
+                                    <FormField label="Préfixe anonymat" required error={errors.anonymat_prefixe?.message}
+                                        hint="Ex: AN, BEPC">
+                                        <Input
+                                            {...register('anonymat_prefixe')}
+                                            placeholder="AN"
+                                            disabled={!anonymatActif}
+                                        />
+                                    </FormField>
+                                    <FormField label="N° de départ" required error={errors.anonymat_debut?.message}
+                                        hint="Premier numéro">
+                                        <Input
+                                            type="number"
+                                            {...register('anonymat_debut', { valueAsNumber: true })}
+                                            min={1}
+                                            disabled={!anonymatActif}
+                                        />
+                                    </FormField>
+                                    <FormField label="Bon de correction" required error={errors.anonymat_bon?.message}
+                                        hint="Copies par correcteur">
+                                        <Select
+                                            {...register('anonymat_bon', { valueAsNumber: true })}
+                                            disabled={!anonymatActif}
+                                        >
+                                            <option value={1}>1 copie</option>
+                                            <option value={3}>3 copies</option>
+                                            <option value={5}>5 copies</option>
+                                        </Select>
+                                    </FormField>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100 space-y-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                    Paramètres d'organisation
+                                </p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <FormField label="Capacité salle référence" required error={errors.taille_salle_ref?.message}
+                                        hint="Nb de places par salle type">
+                                        <Input
+                                            type="number"
+                                            {...register('taille_salle_ref', { valueAsNumber: true })}
+                                            min={1}
+                                        />
+                                    </FormField>
+                                    <FormField label="Durée de validité de la signature (jours)" required error={errors.hmac_window_days?.message}
+                                        hint="Signature du fichier Excel de saisie des notes (lot)">
+                                        <Input
+                                            type="number"
+                                            {...register('hmac_window_days', { valueAsNumber: true })}
+                                            min={1}
+                                            max={365}
+                                        />
+                                    </FormField>
+                                </div>
+                                <FormField
+                                    label="Modèle de distribution des copies"
+                                    required
+                                    hint="Définit comment les copies sont regroupées par lot"
+                                >
+                                    <Select {...register('distribution_model')}>
+                                        <option value="A">Modèle A — Anonyme par lot (pas d’établissement)</option>
+                                        <option value="B">Modèle B — Nominatif par établissement</option>
+                                    </Select>
+                                </FormField>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <FormField label="Début de composition">
+                                        <Input type="date" {...register('date_composition_debut')} />
+                                    </FormField>
+                                    <FormField label="Fin de composition">
+                                        <Input type="date" {...register('date_composition_fin')} />
                                     </FormField>
                                 </div>
                             </div>
