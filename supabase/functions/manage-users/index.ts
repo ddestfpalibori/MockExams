@@ -22,7 +22,7 @@ import { requireAuth, createServiceClient, AuthError } from '../_shared/auth.ts'
 
 interface CreateUserRequest {
   action: 'create';
-  email: string;
+  identifier: string; // email or username
   password: string;
   role: 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle';
   nom: string;
@@ -33,8 +33,7 @@ interface CreateUserRequest {
 interface UpdateUserRequest {
   action: 'update';
   user_id: string;
-  email?: string;
-  password?: string;
+  password: string;
 }
 
 interface DisableUserRequest {
@@ -70,15 +69,32 @@ Deno.serve(async (req: Request) => {
 
     // ── Action : créer un utilisateur ───────────────────────────────────────
     if (body.action === 'create') {
-      const { email, password, role: userRole, nom, prenom, telephone } = body;
+      const { identifier, password, role: userRole, nom, prenom, telephone } = body;
 
-      if (!email || !password || !userRole || !nom || !prenom) {
-        return errJson({ error: 'Champs requis : email, password, role, nom, prenom', code: 'BAD_REQUEST' }, 400);
+      if (!identifier || !password || !userRole || !nom || !prenom) {
+        return errJson({ error: 'Champs requis : identifiant, password, role, nom, prenom', code: 'BAD_REQUEST' }, 400);
       }
 
-      // Validation basique de l'email
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return errJson({ error: 'Email invalide', code: 'INVALID_EMAIL' }, 400);
+      const raw = identifier.trim();
+      const isEmail = raw.includes('@');
+      let username: string | null = null;
+      let email_login: string;
+
+      if (isEmail) {
+        // Validation basique de l'email
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+          return errJson({ error: 'Email invalide', code: 'INVALID_EMAIL' }, 400);
+        }
+        if (raw.toLowerCase().endsWith('@mockexams.local')) {
+          return errJson({ error: 'Domaine @mockexams.local réservé au système', code: 'RESERVED_DOMAIN' }, 400);
+        }
+        email_login = raw.toLowerCase();
+      } else {
+        username = raw.toLowerCase();
+        if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
+          return errJson({ error: "Nom d'utilisateur invalide", code: 'INVALID_USERNAME' }, 400);
+        }
+        email_login = `${username}@mockexams.local`;
       }
 
       // Longueur minimale du mot de passe
@@ -88,7 +104,7 @@ Deno.serve(async (req: Request) => {
 
       // 1. Créer le compte auth.users via Admin API
       const { data: authUser, error: createError } = await supabase.auth.admin.createUser({
-        email,
+        email: email_login,
         password,
         email_confirm: true, // Pas de vérification email requise (contexte interne)
       });
@@ -106,7 +122,8 @@ Deno.serve(async (req: Request) => {
         .from('profiles')
         .insert({
           id: authUser.user.id,
-          email,
+          username,
+          email_login,
           nom,
           prenom,
           role: userRole,
@@ -126,46 +143,35 @@ Deno.serve(async (req: Request) => {
 
       return jsonOk({
         user_id: authUser.user.id,
-        email,
+        email: email_login,
+        username,
         role: userRole,
         message: 'Utilisateur créé avec succès',
       }, 201);
     }
 
-    // ── Action : mettre à jour email / mot de passe ──────────────────────────
+    // ── Action : réinitialiser le mot de passe ──────────────────────────────
     if (body.action === 'update') {
-      const { user_id, email, password } = body;
+      const { user_id, password } = body;
 
       if (!user_id) {
         return errJson({ error: 'user_id requis', code: 'BAD_REQUEST' }, 400);
       }
-      if (!email && !password) {
-        return errJson({ error: 'Au moins email ou password requis', code: 'BAD_REQUEST' }, 400);
-      }
-      if (password && password.length < 8) {
+      if (!password || password.length < 8) {
         return errJson({ error: 'Mot de passe trop court (8 caractères minimum)', code: 'WEAK_PASSWORD' }, 400);
       }
 
-      const updatePayload: { email?: string; password?: string } = {};
-      if (email) updatePayload.email = email;
-      if (password) updatePayload.password = password;
-
-      const { error: updateError } = await supabase.auth.admin.updateUserById(user_id, updatePayload);
+      const { error: updateError } = await supabase.auth.admin.updateUserById(user_id, { password });
 
       if (updateError) {
-        console.error('[manage-users] Erreur mise à jour utilisateur:', updateError);
+        console.error('[manage-users] Erreur réinitialisation mot de passe:', updateError);
         if (updateError.message?.includes('User not found')) {
           return errJson({ error: 'Utilisateur introuvable', code: 'USER_NOT_FOUND' }, 404);
         }
         return errJson({ error: updateError.message, code: 'AUTH_UPDATE_ERROR' }, 500);
       }
 
-      // Mettre à jour l'email dans profiles si changé
-      if (email) {
-        await supabase.from('profiles').update({ email }).eq('id', user_id);
-      }
-
-      return jsonOk({ user_id, message: 'Utilisateur mis à jour' });
+      return jsonOk({ user_id, message: 'Mot de passe réinitialisé' });
     }
 
     // ── Action : désactiver (ban) ────────────────────────────────────────────

@@ -34,7 +34,7 @@ export const profileService = {
 
     /** Crée un utilisateur via Edge Function manage-users */
     async createUser(payload: {
-        email: string;
+        identifier: string;
         password: string;
         role: UserRole;
         nom: string;
@@ -43,6 +43,16 @@ export const profileService = {
     }) {
         const { data, error } = await supabase.functions.invoke('manage-users', {
             body: { action: 'create', ...payload },
+        });
+
+        if (error) throw error;
+        return data;
+    },
+
+    /** Réinitialise le mot de passe d'un utilisateur via Edge Function (Admin uniquement) */
+    async resetPassword(userId: string, newPassword: string) {
+        const { data, error } = await supabase.functions.invoke('manage-users', {
+            body: { action: 'update', user_id: userId, password: newPassword },
         });
 
         if (error) throw error;

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { FormField, Input, Select } from '@/components/ui/FormField';
-import { Plus, UserX } from 'lucide-react';
+import { Plus, UserX, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ProfileRow, UserRole } from '@/types/domain';
 
@@ -28,7 +28,7 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 ];
 
 interface CreateForm {
-    email: string;
+    identifier: string;
     password: string;
     nom: string;
     prenom: string;
@@ -37,7 +37,7 @@ interface CreateForm {
 }
 
 const EMPTY_FORM: CreateForm = {
-    email: '',
+    identifier: '',
     password: '',
     nom: '',
     prenom: '',
@@ -52,6 +52,8 @@ export default function UtilisateursPage() {
 
     const [createOpen, setCreateOpen] = useState(false);
     const [disableTarget, setDisableTarget] = useState<ProfileRow | null>(null);
+    const [resetTarget, setResetTarget] = useState<ProfileRow | null>(null);
+    const [resetPassword, setResetPassword] = useState('');
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
 
@@ -61,9 +63,23 @@ export default function UtilisateursPage() {
     };
 
     const handleCreate = async () => {
-        if (!form.email || !form.password || !form.nom || !form.prenom) {
+        if (!form.identifier || !form.password || !form.nom || !form.prenom) {
             toast.error('Tous les champs sont requis');
             return;
+        }
+        const rawIdentifier = form.identifier.trim();
+        if (rawIdentifier.includes('@')) {
+            const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawIdentifier);
+            if (!emailOk) {
+                toast.error('Adresse email invalide');
+                return;
+            }
+        } else {
+            const usernameOk = /^[a-z0-9][a-z0-9._-]{2,31}$/.test(rawIdentifier.toLowerCase());
+            if (!usernameOk) {
+                toast.error('Nom d\'utilisateur invalide');
+                return;
+            }
         }
         if (form.password.length < 8) {
             toast.error('Mot de passe trop court (8 caractères minimum)');
@@ -72,7 +88,7 @@ export default function UtilisateursPage() {
         setSaving(true);
         try {
             await profileService.createUser({
-                email: form.email,
+                identifier: form.identifier,
                 password: form.password,
                 nom: form.nom,
                 prenom: form.prenom,
@@ -83,7 +99,39 @@ export default function UtilisateursPage() {
             toast.success('Utilisateur créé avec succès');
             setCreateOpen(false);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+            const msg =
+                err instanceof Error && 'context' in err
+                    ? (err as { context?: { json?: { error?: string } } }).context?.json?.error ??
+                      err.message
+                    : err instanceof Error
+                        ? err.message
+                        : 'Erreur inconnue';
+            toast.error(msg);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleReset = async () => {
+        if (!resetTarget) return;
+        if (resetPassword.length < 8) {
+            toast.error('Mot de passe trop court (8 caractères minimum)');
+            return;
+        }
+        setSaving(true);
+        try {
+            await profileService.resetPassword(resetTarget.id, resetPassword);
+            toast.success(`Mot de passe de ${resetTarget.prenom} ${resetTarget.nom} réinitialisé`);
+            setResetTarget(null);
+            setResetPassword('');
+        } catch (err) {
+            const msg =
+                err instanceof Error && 'context' in err
+                    ? (err as { context?: { json?: { error?: string } } }).context?.json?.error ??
+                      err.message
+                    : err instanceof Error
+                        ? err.message
+                        : 'Erreur inconnue';
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -98,7 +146,13 @@ export default function UtilisateursPage() {
             toast.success(`${profile.prenom} ${profile.nom} désactivé`);
             setDisableTarget(null);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Erreur inconnue';
+            const msg =
+                err instanceof Error && 'context' in err
+                    ? (err as { context?: { json?: { error?: string } } }).context?.json?.error ??
+                      err.message
+                    : err instanceof Error
+                        ? err.message
+                        : 'Erreur inconnue';
             toast.error(msg);
         } finally {
             setSaving(false);
@@ -149,15 +203,26 @@ export default function UtilisateursPage() {
                 const isSelf = row.id === user?.id;
                 if (!row.is_active || isSelf) return null;
                 return (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDisableTarget(row)}
-                        title="Désactiver"
-                        className="text-danger hover:bg-danger/10"
-                    >
-                        <UserX className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => { setResetTarget(row); setResetPassword(''); }}
+                            title="Réinitialiser le mot de passe"
+                            className="text-slate-500 hover:bg-slate-100"
+                        >
+                            <KeyRound className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDisableTarget(row)}
+                            title="Désactiver"
+                            className="text-danger hover:bg-danger/10"
+                        >
+                            <UserX className="h-4 w-4" />
+                        </Button>
+                    </div>
                 );
             },
         },
@@ -220,12 +285,12 @@ export default function UtilisateursPage() {
                             />
                         </FormField>
                     </div>
-                    <FormField label="Adresse email" required>
+                    <FormField label="Identifiant (email ou nom d'utilisateur)" required>
                         <Input
-                            type="email"
-                            value={form.email}
-                            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                            placeholder="jean.dupont@education.bj"
+                            type="text"
+                            value={form.identifier}
+                            onChange={(e) => setForm((f) => ({ ...f, identifier: e.target.value }))}
+                            placeholder="jean.dupont@education.bj ou jean.dupont"
                             autoComplete="off"
                         />
                     </FormField>
@@ -258,6 +323,39 @@ export default function UtilisateursPage() {
                                 </option>
                             ))}
                         </Select>
+                    </FormField>
+                </div>
+            </Modal>
+
+            {/* Modal réinitialisation mot de passe */}
+            <Modal
+                open={!!resetTarget}
+                onOpenChange={(o) => { if (!o) { setResetTarget(null); setResetPassword(''); } }}
+                title="Réinitialiser le mot de passe"
+                footer={
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => { setResetTarget(null); setResetPassword(''); }}>
+                            Annuler
+                        </Button>
+                        <Button onClick={handleReset} isLoading={saving}>
+                            Réinitialiser
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-3">
+                    <p className="text-slate-600">
+                        Définissez un nouveau mot de passe provisoire pour{' '}
+                        <strong>{resetTarget?.prenom} {resetTarget?.nom}</strong>.
+                    </p>
+                    <FormField label="Nouveau mot de passe" required>
+                        <Input
+                            type="password"
+                            value={resetPassword}
+                            onChange={(e) => setResetPassword(e.target.value)}
+                            placeholder="8 caractères minimum"
+                            autoComplete="new-password"
+                        />
                     </FormField>
                 </div>
             </Modal>

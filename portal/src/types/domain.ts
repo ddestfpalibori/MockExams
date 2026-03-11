@@ -78,6 +78,8 @@ export interface ExamenStats {
 export interface ProfileRow {
     id: string;
     role: UserRole;
+    username: string | null;
+    email_login: string;
     nom: string;
     prenom: string;
     telephone: string | null;

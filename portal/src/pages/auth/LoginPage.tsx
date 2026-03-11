@@ -7,7 +7,16 @@ import { supabase } from '../../lib/supabase';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
-    email: z.string().email('Adresse courriel invalide'),
+    identifier: z
+        .string()
+        .trim()
+        .min(3, 'Identifiant trop court')
+        .refine((value) => {
+            if (value.includes('@')) {
+                return z.string().email().safeParse(value).success;
+            }
+            return /^[a-z0-9][a-z0-9._-]{2,31}$/.test(value.toLowerCase());
+        }, 'Identifiant invalide'),
     password: z.string().min(6, 'Mot de passe trop court (minimum 6 caractères)'),
 });
 
@@ -26,8 +35,11 @@ export const LoginPage = () => {
 
     const onSubmit = async (data: LoginFormValues) => {
         try {
+            const raw = data.identifier.trim();
+            const isEmail = raw.includes('@');
+            const email = isEmail ? raw.toLowerCase() : `${raw.toLowerCase()}@mockexams.local`;
             const { error } = await supabase.auth.signInWithPassword({
-                email: data.email,
+                email,
                 password: data.password,
             });
 
@@ -45,26 +57,26 @@ export const LoginPage = () => {
     return (
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                    Adresse courriel
+                <label htmlFor="identifier" className="block text-sm font-medium text-slate-700">
+                    Identifiant (email ou nom d&apos;utilisateur)
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Mail className="h-5 w-5 text-slate-400" />
                     </div>
                     <input
-                        id="email"
-                        type="email"
-                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${errors.email
+                        id="identifier"
+                        type="text"
+                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${errors.identifier
                             ? 'border-danger bg-red-50 focus-visible:ring-danger focus-visible:border-danger'
                             : 'border-slate-300 focus-visible:ring-brand-primary focus-visible:border-brand-primary'
                             }`}
-                        placeholder="vous@exemple.fr"
-                        {...register('email')}
+                        placeholder="email ou nom d'utilisateur"
+                        {...register('identifier')}
                     />
                 </div>
-                {errors.email && (
-                    <p className="mt-1 text-sm text-danger">{errors.email.message}</p>
+                {errors.identifier && (
+                    <p className="mt-1 text-sm text-danger">{errors.identifier.message}</p>
                 )}
             </div>
 
