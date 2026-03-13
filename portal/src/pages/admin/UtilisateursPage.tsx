@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfiles } from '@/hooks/queries/useProfiles';
+import {
+    useProfiles, useCentres, useAllEtablissements, useUserAssignments,
+    useAssignCentre, useRemoveCentre,
+    useAssignEtablissement, useRemoveEtablissement,
+} from '@/hooks/queries/useProfiles';
 import { profileService } from '@/services/profiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/lib/constants/queryKeys';
@@ -9,7 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { FormField, Input, Select } from '@/components/ui/FormField';
-import { Plus, UserX, KeyRound } from 'lucide-react';
+import { Plus, UserX, KeyRound, Building2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ProfileRow, UserRole } from '@/types/domain';
 
@@ -53,9 +57,20 @@ export default function UtilisateursPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [disableTarget, setDisableTarget] = useState<ProfileRow | null>(null);
     const [resetTarget, setResetTarget] = useState<ProfileRow | null>(null);
+    const [assignTarget, setAssignTarget] = useState<ProfileRow | null>(null);
     const [resetPassword, setResetPassword] = useState('');
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+    const [selectedCentreId, setSelectedCentreId] = useState('');
+    const [selectedEtabId, setSelectedEtabId] = useState('');
+
+    const { data: allCentres } = useCentres();
+    const { data: allEtablissements } = useAllEtablissements();
+    const { data: assignments, isLoading: assignmentsLoading } = useUserAssignments(assignTarget?.id ?? '');
+    const assignCentre = useAssignCentre(assignTarget?.id ?? '');
+    const removeCentre = useRemoveCentre(assignTarget?.id ?? '');
+    const assignEtab = useAssignEtablissement(assignTarget?.id ?? '');
+    const removeEtab = useRemoveEtablissement(assignTarget?.id ?? '');
 
     const openCreate = () => {
         setForm(EMPTY_FORM);
@@ -201,27 +216,41 @@ export default function UtilisateursPage() {
             header: '',
             cell: (row) => {
                 const isSelf = row.id === user?.id;
-                if (!row.is_active || isSelf) return null;
                 return (
                     <div className="flex items-center gap-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => { setResetTarget(row); setResetPassword(''); }}
-                            title="Réinitialiser le mot de passe"
-                            className="text-slate-500 hover:bg-slate-100"
-                        >
-                            <KeyRound className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDisableTarget(row)}
-                            title="Désactiver"
-                            className="text-danger hover:bg-danger/10"
-                        >
-                            <UserX className="h-4 w-4" />
-                        </Button>
+                        {(row.role === 'chef_centre' || row.role === 'chef_etablissement') && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => { setAssignTarget(row); setSelectedCentreId(''); setSelectedEtabId(''); }}
+                                title="Gérer les affectations"
+                                className="text-slate-500 hover:bg-slate-100"
+                            >
+                                <Building2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                        {!isSelf && row.is_active && (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => { setResetTarget(row); setResetPassword(''); }}
+                                    title="Réinitialiser le mot de passe"
+                                    className="text-slate-500 hover:bg-slate-100"
+                                >
+                                    <KeyRound className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setDisableTarget(row)}
+                                    title="Désactiver"
+                                    className="text-danger hover:bg-danger/10"
+                                >
+                                    <UserX className="h-4 w-4" />
+                                </Button>
+                            </>
+                        )}
                     </div>
                 );
             },
@@ -358,6 +387,137 @@ export default function UtilisateursPage() {
                         />
                     </FormField>
                 </div>
+            </Modal>
+
+            {/* Modal affectations centres / établissements */}
+            <Modal
+                open={!!assignTarget}
+                onOpenChange={(o) => { if (!o) setAssignTarget(null); }}
+                title={`Affectations — ${assignTarget?.prenom} ${assignTarget?.nom}`}
+                description={assignTarget?.role === 'chef_centre' ? 'Centres accessibles' : 'Établissements accessibles'}
+                footer={
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={() => setAssignTarget(null)}>Fermer</Button>
+                    </div>
+                }
+            >
+                {assignmentsLoading ? (
+                    <div className="h-20 bg-slate-50 animate-pulse rounded-md" />
+                ) : (
+                    <div className="space-y-4">
+                        {/* Centres (chef_centre) */}
+                        {assignTarget?.role === 'chef_centre' && (
+                            <div className="space-y-2">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Centres affectés</p>
+                                {(assignments?.centres ?? []).length === 0 ? (
+                                    <p className="text-sm text-slate-400">Aucun centre affecté.</p>
+                                ) : (
+                                    <ul className="space-y-1">
+                                        {(assignments?.centres ?? []).map((c) => (
+                                            <li key={c.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
+                                                <span className="text-sm font-medium">{c.nom} <span className="text-xs text-slate-400 font-mono">({c.code})</span></span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-danger hover:bg-danger/10 h-6 w-6"
+                                                    isLoading={removeCentre.isPending}
+                                                    onClick={() => removeCentre.mutate(c.id)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <FormField label="Ajouter un centre">
+                                    <div className="flex gap-2">
+                                        <Select
+                                            value={selectedCentreId}
+                                            onChange={(e) => setSelectedCentreId(e.target.value)}
+                                        >
+                                            <option value="">Choisir un centre...</option>
+                                            {(allCentres ?? [])
+                                                .filter((c) => !(assignments?.centres ?? []).some((a) => a.id === c.id))
+                                                .map((c) => (
+                                                    <option key={c.id} value={c.id}>{c.nom} ({c.code})</option>
+                                                ))}
+                                        </Select>
+                                        <Button
+                                            disabled={!selectedCentreId}
+                                            isLoading={assignCentre.isPending}
+                                            onClick={() => {
+                                                if (selectedCentreId) {
+                                                    assignCentre.mutate(selectedCentreId, {
+                                                        onSuccess: () => { setSelectedCentreId(''); toast.success('Centre affecté'); },
+                                                        onError: (err) => toast.error(err instanceof Error ? err.message : 'Erreur'),
+                                                    });
+                                                }
+                                            }}
+                                        >
+                                            Ajouter
+                                        </Button>
+                                    </div>
+                                </FormField>
+                            </div>
+                        )}
+
+                        {/* Établissements (chef_etablissement) */}
+                        {assignTarget?.role === 'chef_etablissement' && (
+                            <div className="space-y-2">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Établissements affectés</p>
+                                {(assignments?.etablissements ?? []).length === 0 ? (
+                                    <p className="text-sm text-slate-400">Aucun établissement affecté.</p>
+                                ) : (
+                                    <ul className="space-y-1">
+                                        {(assignments?.etablissements ?? []).map((e) => (
+                                            <li key={e.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
+                                                <span className="text-sm font-medium">{e.nom} <span className="text-xs text-slate-400 font-mono">({e.code})</span></span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-danger hover:bg-danger/10 h-6 w-6"
+                                                    isLoading={removeEtab.isPending}
+                                                    onClick={() => removeEtab.mutate(e.id)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <FormField label="Ajouter un établissement">
+                                    <div className="flex gap-2">
+                                        <Select
+                                            value={selectedEtabId}
+                                            onChange={(e) => setSelectedEtabId(e.target.value)}
+                                        >
+                                            <option value="">Choisir un établissement...</option>
+                                            {(allEtablissements ?? [])
+                                                .filter((e) => !(assignments?.etablissements ?? []).some((a) => a.id === e.id))
+                                                .map((e) => (
+                                                    <option key={e.id} value={e.id}>{e.nom} ({e.code})</option>
+                                                ))}
+                                        </Select>
+                                        <Button
+                                            disabled={!selectedEtabId}
+                                            isLoading={assignEtab.isPending}
+                                            onClick={() => {
+                                                if (selectedEtabId) {
+                                                    assignEtab.mutate(selectedEtabId, {
+                                                        onSuccess: () => { setSelectedEtabId(''); toast.success('Établissement affecté'); },
+                                                        onError: (err) => toast.error(err instanceof Error ? err.message : 'Erreur'),
+                                                    });
+                                                }
+                                            }}
+                                        >
+                                            Ajouter
+                                        </Button>
+                                    </div>
+                                </FormField>
+                            </div>
+                        )}
+                    </div>
+                )}
             </Modal>
 
             {/* Modal désactivation */}

@@ -17,7 +17,7 @@ export function formatTableNumber(
         table_prefix_valeur = '',
         table_separator = '-',
         table_padding = 4
-    } = examen as any;
+    } = examen;
 
     if (table_prefix_type === 'AUCUN') return String(numero);
 
@@ -30,10 +30,10 @@ export function formatTableNumber(
             prefix = centre?.code || '';
             break;
         case 'COMMUNE':
-            prefix = (centre as any)?.code_commune || '';
+            prefix = centre?.code_commune || '';
             break;
         case 'DEPARTEMENT':
-            prefix = (centre as any)?.code_departement || '';
+            prefix = centre?.code_departement || '';
             break;
     }
 

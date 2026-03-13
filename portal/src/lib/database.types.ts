@@ -16,74 +16,8 @@ export type Database = {
     Tables: {
       [_ in never]: never
     }
-        Views: {
-      v_candidats_affichage: {
-        Row: {
-          candidat_fingerprint: string | null
-          centre_id: string | null
-          created_at: string | null
-          date_naissance_enc: string | null
-          etablissement_id: string | null
-          examen_id: string | null
-          id: string | null
-          import_id: string | null
-          lieu_naissance_enc: string | null
-          nom_enc: string | null
-          numero_anonyme: string | null
-          numero_table: number | null
-          numero_table_formate: string | null
-          prenom_enc: string | null
-          salle_id: string | null
-          serie_id: string | null
-          sexe: string | null
-          source_candidat_id: string | null
-          updated_at: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "candidats_centre_id_fkey"
-            columns: ["centre_id"]
-            isOneToOne: false
-            referencedRelation: "centres"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidats_etablissement_id_fkey"
-            columns: ["etablissement_id"]
-            isOneToOne: false
-            referencedRelation: "etablissements"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidats_examen_id_fkey"
-            columns: ["examen_id"]
-            isOneToOne: false
-            referencedRelation: "examens"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidats_import_id_fkey"
-            columns: ["import_id"]
-            isOneToOne: false
-            referencedRelation: "imports_log"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidats_serie_id_fkey"
-            columns: ["serie_id"]
-            isOneToOne: false
-            referencedRelation: "series"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "candidats_source_candidat_id_fkey"
-            columns: ["source_candidat_id"]
-            isOneToOne: false
-            referencedRelation: "candidats"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
+    Views: {
+      [_ in never]: never
     }
     Functions: {
       graphql: {
@@ -1397,7 +1331,73 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_candidats_affichage: {
+        Row: {
+          candidat_fingerprint: string | null
+          centre_id: string | null
+          created_at: string | null
+          date_naissance_enc: string | null
+          etablissement_id: string | null
+          examen_id: string | null
+          id: string | null
+          import_id: string | null
+          lieu_naissance_enc: string | null
+          nom_enc: string | null
+          numero_anonyme: string | null
+          numero_table: number | null
+          numero_table_formate: string | null
+          prenom_enc: string | null
+          salle_id: string | null
+          serie_id: string | null
+          sexe: string | null
+          source_candidat_id: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidats_centre_id_fkey"
+            columns: ["centre_id"]
+            isOneToOne: false
+            referencedRelation: "centres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_examen_id_fkey"
+            columns: ["examen_id"]
+            isOneToOne: false
+            referencedRelation: "examens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "imports_log"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_serie_id_fkey"
+            columns: ["serie_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "candidats_source_candidat_id_fkey"
+            columns: ["source_candidat_id"]
+            isOneToOne: false
+            referencedRelation: "candidats"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Functions: {
       affecter_candidats_salles: {

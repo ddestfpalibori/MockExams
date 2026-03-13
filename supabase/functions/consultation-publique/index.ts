@@ -230,15 +230,8 @@ Deno.serve(async (req: Request) => {
       return errJson(GENERIC_ERROR, 401);
     }
 
-    // ── 7. Succès → réinitialiser tentatives + enregistrer connexion ────────
+    // ── 7. Succès → enregistrer connexion (SEC-03 : on ne reset plus les tentatives) ────────
     await Promise.all([
-      // Réinitialiser le compteur de lockout
-      tentative
-        ? supabase
-          .from('consultation_tentatives')
-          .update({ tentatives: 0, lockout_until: null, derniere_tentative: new Date().toISOString() })
-          .eq('id', tentative.id)
-        : Promise.resolve(),
       // Enregistrer la connexion réussie
       supabase
         .from('codes_acces')

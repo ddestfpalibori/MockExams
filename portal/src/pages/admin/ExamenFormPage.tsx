@@ -47,29 +47,34 @@ const schema = z.object({
     eps_active: z.boolean(),
     facultatif_actif: z.boolean(),
 })
-// Dates cohérentes : début <= fin
-.refine(
-    (v) => !v.date_composition_debut || !v.date_composition_fin
-        || v.date_composition_debut <= v.date_composition_fin,
-    { message: 'La date de fin doit être postérieure ou égale au début', path: ['date_composition_fin'] }
-)
-// Seuil rattrapage strictement inférieur au seuil phase 2 (contrainte DB)
-.refine(
-    (v) => !v.rattrapage_actif || v.seuil_rattrapage == null
-        || v.seuil_rattrapage < v.seuil_phase2,
-    { message: 'Le seuil rattrapage doit être inférieur au seuil phase 2', path: ['seuil_rattrapage'] }
-)
-// Valeur fixe requise si mode FIXE
-.refine(
-    (v) => v.table_prefix_type !== 'FIXE'
-        || (v.table_prefix_valeur != null && v.table_prefix_valeur.trim().length > 0),
-    { message: 'La valeur fixe est requise en mode FIXE', path: ['table_prefix_valeur'] }
-)
-// Préfixe anonymat requis seulement si anonymat activé
-.refine(
-    (v) => !v.anonymat_actif || v.anonymat_prefixe.trim().length >= 1,
-    { message: 'Requis', path: ['anonymat_prefixe'] }
-);
+    // Dates cohérentes : début <= fin
+    .refine(
+        (v) => !v.date_composition_debut || !v.date_composition_fin
+            || v.date_composition_debut <= v.date_composition_fin,
+        { message: 'La date de fin doit être postérieure ou égale au début', path: ['date_composition_fin'] }
+    )
+    // Seuil phase 1 <= phase 2 (si deux phases)
+    .refine(
+        (v) => v.mode_deliberation !== 'deux_phases' || v.seuil_phase1 <= v.seuil_phase2,
+        { message: 'Le seuil phase 1 doit être inférieur ou égal au seuil phase 2', path: ['seuil_phase1'] }
+    )
+    // Seuil rattrapage strictement inférieur au seuil phase 2 (contrainte DB)
+    .refine(
+        (v) => !v.rattrapage_actif || v.seuil_rattrapage == null
+            || v.seuil_rattrapage < v.seuil_phase2,
+        { message: 'Le seuil rattrapage doit être inférieur au seuil phase 2', path: ['seuil_rattrapage'] }
+    )
+    // Valeur fixe requise si mode FIXE
+    .refine(
+        (v) => v.table_prefix_type !== 'FIXE'
+            || (v.table_prefix_valeur != null && v.table_prefix_valeur.trim().length > 0),
+        { message: 'La valeur fixe est requise en mode FIXE', path: ['table_prefix_valeur'] }
+    )
+    // Préfixe anonymat requis seulement si anonymat activé
+    .refine(
+        (v) => !v.anonymat_actif || v.anonymat_prefixe.trim().length >= 1,
+        { message: 'Requis', path: ['anonymat_prefixe'] }
+    );
 
 type FormValues = z.infer<typeof schema>;
 
@@ -335,6 +340,7 @@ export default function ExamenFormPage() {
     const onSubmit: SubmitHandler<FormValues> = async (values) => {
         const payload = {
             ...values,
+            seuil_phase2: values.mode_deliberation === 'deux_phases' ? values.seuil_phase2 : values.seuil_phase1,
             seuil_rattrapage: values.rattrapage_actif ? values.seuil_rattrapage : null,
             date_composition_debut: values.date_composition_debut || null,
             date_composition_fin: values.date_composition_fin || null,

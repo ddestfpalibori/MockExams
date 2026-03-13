@@ -54,8 +54,7 @@ export const resultatService = {
             id: r.id,
             examen_id: r.examen_id,
             candidat_id: r.candidat_id,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            numero_anonyme: (r as any).candidats?.numero_anonyme ?? null,
+            numero_anonyme: (r.candidats as { numero_anonyme: string | null } | null)?.numero_anonyme ?? null,
             status: r.status,
             moyenne_centimes: r.moyenne_centimes,
             phase: r.phase,

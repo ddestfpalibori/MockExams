@@ -38,6 +38,7 @@ export const QUERY_KEYS = {
         all: ['profiles'] as const,
         list: () => ['profiles', 'list'] as const,
         me: () => ['profiles', 'me'] as const,
+        assignments: (userId: string) => ['profiles', 'assignments', userId] as const,
     },
     resultats: {
         all: ['resultats'] as const,

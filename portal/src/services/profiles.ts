@@ -1,5 +1,10 @@
 import { supabase } from '@/lib/supabase';
-import type { ProfileRow, UserRole } from '@/types/domain';
+import type { ProfileRow, UserRole, CentreRow, EtablissementRow } from '@/types/domain';
+
+export interface UserAssignments {
+    centres: CentreRow[];
+    etablissements: EtablissementRow[];
+}
 
 /**
  * Service pour la gestion des profils et utilisateurs (M01)
@@ -70,5 +75,71 @@ export const profileService = {
 
         if (error) throw error;
         return data;
+    },
+
+    /** Récupère les centres et établissements affectés à un utilisateur */
+    async fetchUserAssignments(userId: string): Promise<UserAssignments> {
+        const [centresRes, etablissementsRes] = await Promise.all([
+            supabase
+                .from('user_centres')
+                .select('centres(*)')
+                .eq('user_id', userId),
+            supabase
+                .from('user_etablissements')
+                .select('etablissements(*)')
+                .eq('user_id', userId),
+        ]);
+
+        if (centresRes.error) throw centresRes.error;
+        if (etablissementsRes.error) throw etablissementsRes.error;
+
+        return {
+            centres: (centresRes.data ?? [])
+                .map((r) => r.centres)
+                .flatMap((c) => c ? [c] : []),
+            etablissements: (etablissementsRes.data ?? [])
+                .map((r) => r.etablissements)
+                .flatMap((e) => e ? [e] : []),
+        };
+    },
+
+    /** Affecte un centre à un utilisateur (admin only via RLS) */
+    async assignCentre(userId: string, centreId: string): Promise<void> {
+        const { error } = await supabase
+            .from('user_centres')
+            .insert({ user_id: userId, centre_id: centreId });
+
+        if (error) throw error;
+    },
+
+    /** Retire l'affectation d'un centre à un utilisateur */
+    async removeCentre(userId: string, centreId: string): Promise<void> {
+        const { error } = await supabase
+            .from('user_centres')
+            .delete()
+            .eq('user_id', userId)
+            .eq('centre_id', centreId);
+
+        if (error) throw error;
+    },
+
+    /** Affecte un établissement à un utilisateur (admin only via RLS) */
+    async assignEtablissement(userId: string, etablissementId: string): Promise<void> {
+        const { error } = await supabase
+            .from('user_etablissements')
+            .insert({ user_id: userId, etablissement_id: etablissementId });
+
+        if (error) throw error;
+    },
+
+    /** Retire l'affectation d'un établissement à un utilisateur */
+    async removeEtablissement(userId: string, etablissementId: string): Promise<void> {
+        const { error } = await supabase
+            .from('user_etablissements')
+            .delete()
+            .eq('user_id', userId)
+            .eq('etablissement_id', etablissementId);
+
+        if (error) throw error;
     },
 };

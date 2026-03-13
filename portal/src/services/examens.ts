@@ -161,7 +161,7 @@ export const examenService = {
             .order('ordre_affichage');
 
         if (error) throw error;
-        return data as unknown as ExamenDisciplineDetail[];
+        return data as ExamenDisciplineDetail[];
     },
 
     /** Ajoute une discipline à un examen */

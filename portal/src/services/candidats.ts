@@ -19,8 +19,8 @@ export const candidatService = {
         const from = (params.page - 1) * params.pageSize;
         const to = from + params.pageSize - 1;
 
-        let query = (supabase
-            .from('v_candidats_affichage' as any) as any)
+        let query = supabase
+            .from('v_candidats_affichage')
             .select(`
                 id,
                 numero_anonyme,

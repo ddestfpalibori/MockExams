@@ -38,7 +38,7 @@ export interface ExamenRow {
     mode_deliberation: Database['public']['Enums']['deliberation_mode'];
     seuil_phase1: number;
     seuil_phase2: number;
-    seuil_rattrapage: number | null; // nullable — NULL = fallback automatique (seuil_phase2 - 2 pts)
+    seuil_rattrapage: number | null; // nullable — doit être défini explicitement si activé, pas de fallback
     oral_actif: boolean;
     eps_active: boolean;
     facultatif_actif: boolean;
@@ -105,8 +105,8 @@ export interface CentreRow {
     code: string;
     ville: string | null;
     is_active: boolean;
-    code_departement?: string | null;
-    code_commune?: string | null;
+    code_departement: string | null;
+    code_commune: string | null;
     created_at: string;
     updated_at: string;
 }

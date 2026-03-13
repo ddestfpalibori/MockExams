@@ -36,7 +36,7 @@ export const lotService = {
 
         if (error) throw error;
 
-        return (data as unknown as LotQueryResult[]).map((l) => ({
+        return (data as LotQueryResult[]).map((l) => ({
             id: l.id,
             centre_id: l.centre_id,
             examen_id: l.examen_id,
@@ -101,9 +101,11 @@ export const lotService = {
 
         if (error) throw error;
 
-        return (data ?? []).map((cl) => {
-            const c = cl.candidats as unknown as { numero_anonyme: string };
-            return c.numero_anonyme;
+        return (data ?? []).flatMap((cl) => {
+            if (cl.candidats && !Array.isArray(cl.candidats) && cl.candidats.numero_anonyme) {
+                return [cl.candidats.numero_anonyme];
+            }
+            return [];
         });
     },
 
