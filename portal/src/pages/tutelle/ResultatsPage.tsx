@@ -2,10 +2,14 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useResultats } from '@/hooks/queries/useResultats';
+import { useAuth } from '@/hooks/useAuth';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
+import { Button } from '@/components/ui/Button';
 import { ResultatStatusBadge } from '@/components/ui/StatusBadge';
-import type { ExamenRow, ResultatStatus } from '@/types/domain';
+import { ExportModal } from '@/components/ExportModal';
+import { Download } from 'lucide-react';
+import type { ExamenRow, ResultatStatus, UserRole } from '@/types/domain';
 import type { ResultatRow } from '@/services/resultats';
 
 const PAGE_SIZE = 50;
@@ -23,8 +27,11 @@ export default function ResultatsPage() {
 
     const [examenId, setExamenId] = useState(defaultExamenId);
     const [statusFilter, setStatusFilter] = useState<ResultatStatus | ''>('');
+    const [exportOpen, setExportOpen] = useState(false);
 
+    const { role } = useAuth();
     const { data: examens } = useExamens();
+    const selectedExamen = (examens ?? []).find((e: ExamenRow) => e.id === examenId);
 
     const { data: resultats, total, page, setPage, isLoading } = useResultats({
         examenId,
@@ -131,7 +138,29 @@ export default function ResultatsPage() {
                         {total.toLocaleString('fr-FR')} résultats
                     </span>
                 )}
+
+                {examenId && total > 0 && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setExportOpen(true)}
+                        className="ml-auto"
+                    >
+                        <Download size={16} className="mr-1.5" />
+                        Exporter
+                    </Button>
+                )}
             </div>
+
+            {examenId && selectedExamen && (
+                <ExportModal
+                    open={exportOpen}
+                    onOpenChange={setExportOpen}
+                    examenId={examenId}
+                    examenCode={selectedExamen.code}
+                    userRole={(role ?? 'tutelle') as UserRole}
+                />
+            )}
 
             <DataTable
                 columns={columns}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExamens } from '@/hooks/queries/useExamens';
@@ -10,7 +10,8 @@ import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { Users, ClipboardList, Upload, Calendar } from 'lucide-react';
+import { ExportModal } from '@/components/ExportModal';
+import { Users, ClipboardList, Upload, Calendar, Download } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function EtablissementDashboard() {
@@ -28,6 +29,8 @@ export default function EtablissementDashboard() {
 
     const { data: stats, isLoading: statsLoading } = useEtablissementStats(etablissementId);
     const { data: examens, isLoading: examensLoading } = useExamens();
+
+    const [exportExamen, setExportExamen] = useState<ExamenRow | null>(null);
 
     const examensActifs = examens?.filter(
         (e) => e.status !== 'CLOS' && e.status !== 'CONFIG'
@@ -78,6 +81,16 @@ export default function EtablissementDashboard() {
                         >
                             <Upload className="mr-1 h-3 w-3" />
                             Importer
+                        </Button>
+                    )}
+                    {(row.status === 'DELIBERE' || row.status === 'PUBLIE' || row.status === 'CLOS') && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setExportExamen(row)}
+                        >
+                            <Download className="mr-1 h-3 w-3" />
+                            Exporter
                         </Button>
                     )}
                 </div>
@@ -151,6 +164,17 @@ export default function EtablissementDashboard() {
                     emptyMessage="Aucun examen actif pour votre établissement."
                 />
             </div>
+
+            {exportExamen && (
+                <ExportModal
+                    open={!!exportExamen}
+                    onOpenChange={(open) => { if (!open) setExportExamen(null); }}
+                    examenId={exportExamen.id}
+                    examenCode={exportExamen.code}
+                    etablissementId={etablissementId}
+                    userRole="chef_etablissement"
+                />
+            )}
         </div>
     );
 }
