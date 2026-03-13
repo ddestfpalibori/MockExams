@@ -156,7 +156,7 @@ Deno.serve(async (req: Request) => {
     // matiere_id du HMAC = examen_discipline_id dans lots
     const { data: lot } = await supabase
       .from('lots')
-      .select('id, nb_copies')
+      .select('id, nb_copies, status')
       .eq('centre_id', meta.centre_id)
       .eq('examen_id', meta.examen_id)
       .eq('examen_discipline_id', meta.matiere_id)   // clé canonique — lève l'ambiguïté
@@ -169,6 +169,13 @@ Deno.serve(async (req: Request) => {
         error: 'Lot introuvable — générer les lots avant l\'import',
         code: 'LOT_NOT_FOUND',
       }, 404);
+    }
+
+    if (lot.status === 'TERMINE') {
+      return errJson({
+        error: 'Ce lot a déjà été importé. Contactez un administrateur pour réinitialiser.',
+        code: 'LOT_ALREADY_IMPORTED',
+      }, 422);
     }
 
     const warnings: string[] = [];
@@ -251,6 +258,7 @@ Deno.serve(async (req: Request) => {
         .eq('id', lot.id);
       if (lotUpdateError) {
         console.error('[verify-import] Erreur mise à jour status lot:', lotUpdateError);
+        warnings.push('Notes enregistrées mais statut du lot non mis à jour — contacter un administrateur.');
       }
     }
 

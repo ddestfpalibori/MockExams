@@ -58,14 +58,25 @@ export default function ConsultationPage() {
             );
 
             if (fnError) {
-                // 403 = lockout, 429 = rate limit
-                const status = (fnError as { status?: number }).status;
+                // FunctionsHttpError expose le status via context.status (supabase-js >= 2)
+                const status = (fnError as { context?: { status?: number } }).context?.status
+                    ?? (fnError as { status?: number }).status;
+
+                // Lire retry_after_seconds depuis le body de l'erreur
+                let retryAfterSeconds: number | undefined;
+                try {
+                    const body = await (fnError as { context?: Response }).context?.json() as { retry_after_seconds?: number } | undefined;
+                    retryAfterSeconds = body?.retry_after_seconds;
+                } catch {
+                    // Body non lisible — les fallbacks ci-dessous s'appliquent
+                }
+
                 if (status === 403) {
-                    // Lire retry_after_seconds depuis le corps de l'erreur si disponible
-                    setLockoutUntil(new Date(Date.now() + 60 * 60 * 1000)); // fallback 1h
+                    const lockoutMs = retryAfterSeconds ? retryAfterSeconds * 1000 : 60 * 60 * 1000;
+                    setLockoutUntil(new Date(Date.now() + lockoutMs));
                     setError('Trop de tentatives. Accès temporairement verrouillé.');
                 } else if (status === 429) {
-                    setLockoutUntil(new Date(Date.now() + 60 * 1000)); // 1 min
+                    setLockoutUntil(new Date(Date.now() + 60 * 1000));
                     setError('Trop de requêtes. Réessayez dans une minute.');
                 } else if (status === 404) {
                     setResult('not_found');

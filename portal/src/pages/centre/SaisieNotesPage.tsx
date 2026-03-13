@@ -13,11 +13,14 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import type { ExamenRow } from '@/types/domain';
 import type { LotWithDetails } from '@/services/lots';
+import { lotService } from '@/services/lots';
+import { parseLotExcel } from '@/services/excelLot';
 
 interface SaisieResult {
     nb_succes: number;
     nb_erreurs: number;
     warnings: string[];
+    lines?: { numero_anonyme: string; status: string; errors: string[] }[];
 }
 
 export default function SaisieNotesPage() {
@@ -70,20 +73,25 @@ export default function SaisieNotesPage() {
         setResult(null);
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('lot_id', selectedLot.id);
-            formData.append('centre_id', centreId);
-            formData.append('examen_id', examenId);
+            // 1. Parser le fichier Excel (extraction _meta + lignes de notes)
+            const parsed = await parseLotExcel(file);
 
-            const { data, error } = await supabase.functions.invoke<SaisieResult>(
-                'verify-import',
-                { body: formData }
-            );
+            // 2. Envoyer les données en JSON vers verify-import
+            const data = await lotService.importNotes(parsed.meta, parsed.rows);
 
-            if (error) throw error;
-            setResult(data ?? { nb_succes: 0, nb_erreurs: 0, warnings: [] });
-            toast.success('Notes importées avec succès');
+            setResult({
+                nb_succes: data.nb_success,
+                nb_erreurs: data.nb_errors,
+                warnings: data.warnings,
+                lines: data.lines,
+            });
+
+            if (data.success) {
+                toast.success(`${data.nb_success} note(s) importée(s)`);
+            } else {
+                toast.warning(`Import partiel : ${data.nb_success} OK, ${data.nb_errors} erreur(s)`);
+            }
+
             queryClient.invalidateQueries({
                 queryKey: QUERY_KEYS.centres.lots(centreId, examenId),
             });
@@ -286,6 +294,21 @@ export default function SaisieNotesPage() {
                             <ul className="text-xs text-amber-700 space-y-1 max-h-32 overflow-y-auto">
                                 {result.warnings.map((w, i) => (
                                     <li key={i}>• {w}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {result.lines && result.lines.filter((l) => l.status === 'error').length > 0 && (
+                        <div className="rounded-md bg-red-50 border border-red-200 p-4">
+                            <p className="text-sm font-medium text-red-800 mb-2">
+                                Erreurs par ligne ({result.lines.filter((l) => l.status === 'error').length})
+                            </p>
+                            <ul className="text-xs text-red-700 space-y-1 max-h-40 overflow-y-auto">
+                                {result.lines.filter((l) => l.status === 'error').map((l) => (
+                                    <li key={l.numero_anonyme}>
+                                        <span className="font-mono">{l.numero_anonyme}</span> : {l.errors.join(', ')}
+                                    </li>
                                 ))}
                             </ul>
                         </div>

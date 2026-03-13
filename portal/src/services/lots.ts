@@ -90,4 +90,64 @@ export const lotService = {
 
         if (error) throw error;
     },
+
+    /** Récupère les numéros anonymes des candidats d'un lot (pour export Excel) */
+    async fetchLotCandidats(lotId: string): Promise<string[]> {
+        const { data, error } = await supabase
+            .from('candidat_lots')
+            .select('candidats!inner(numero_anonyme)')
+            .eq('lot_id', lotId)
+            .order('position_dans_lot');
+
+        if (error) throw error;
+
+        return (data ?? []).map((cl) => {
+            const c = cl.candidats as unknown as { numero_anonyme: string };
+            return c.numero_anonyme;
+        });
+    },
+
+    /** Récupère le type d'une examen_discipline (pour déterminer option_id) */
+    async fetchDisciplineType(examenDisciplineId: string): Promise<string> {
+        const { data, error } = await supabase
+            .from('examen_disciplines')
+            .select('type')
+            .eq('id', examenDisciplineId)
+            .single();
+
+        if (error) throw error;
+        return data.type;
+    },
+
+    /** Import des notes via Edge Function verify-import (JSON, pas FormData) */
+    async importNotes(meta: {
+        centre_id: string;
+        examen_id: string;
+        matiere_id: string;
+        serie_id: string;
+        option_id: string;
+        lot_numero: number;
+        nb_copies: number;
+        generation_timestamp: string;
+        hmac_signature: string;
+    }, rows: { numero_anonyme: string; valeur: string | number }[]): Promise<{
+        success: boolean;
+        nb_success: number;
+        nb_errors: number;
+        lines: { numero_anonyme: string; status: string; errors: string[] }[];
+        warnings: string[];
+    }> {
+        const { data, error } = await supabase.functions.invoke('verify-import', {
+            body: { meta, rows },
+        });
+
+        if (error) throw error;
+        return data as {
+            success: boolean;
+            nb_success: number;
+            nb_errors: number;
+            lines: { numero_anonyme: string; status: string; errors: string[] }[];
+            warnings: string[];
+        };
+    },
 };

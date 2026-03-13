@@ -5,7 +5,9 @@ import {
     useExamenDetail,
     useExamenDetailStats,
     useTransitionPhase,
+    useDeliberation,
 } from '@/hooks/queries/useExamens';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatCard } from '@/components/ui/StatCard';
@@ -24,6 +26,8 @@ import {
     Lock,
     PenLine,
     Edit,
+    RotateCcw,
+    Archive,
 } from 'lucide-react';
 import type { ExamStatus } from '@/types/domain';
 
@@ -74,6 +78,9 @@ export default function ExamenDetailPage() {
     const { data: examen, isLoading } = useExamenDetail(id!);
     const { data: stats, isLoading: statsLoading } = useExamenDetailStats(id!);
     const transitionMutation = useTransitionPhase(id!);
+    const delibererMutation = useDeliberation(id!);
+    const { user } = useAuth();
+    const [deliberationErrors, setDeliberationErrors] = useState<Array<{ candidat_id: string; message: string }>>([]);
 
     if (isLoading) {
         return <div className="flex h-64 items-center justify-center"><LoadingSpinner size="lg" /></div>;
@@ -92,6 +99,19 @@ export default function ExamenDetailPage() {
         try {
             await transitionMutation.mutateAsync(transitionTarget);
             setTransitionTarget(null);
+            setDeliberationErrors([]);
+        } catch {
+            // Erreur capturée par le MutationCache (toast global)
+        }
+    };
+
+    // Délibération : F03 d'abord, puis modal de confirmation pour la transition DELIBERE
+    const handleDeliberer = async () => {
+        if (!user) return;
+        try {
+            const result = await delibererMutation.mutateAsync(user.id) as { erreurs?: Array<{ candidat_id: string; message: string }> } | null;
+            setDeliberationErrors(result?.erreurs ?? []);
+            setTransitionTarget('DELIBERE');
         } catch {
             // Erreur capturée par le MutationCache (toast global)
         }
@@ -152,15 +172,39 @@ export default function ExamenDetailPage() {
                         </Button>
                     )}
                     {examen.status === 'DELIBERATION' && (
-                        <Button variant="success" onClick={() => setTransitionTarget('DELIBERE')}>
+                        <Button variant="success" onClick={handleDeliberer} isLoading={delibererMutation.isPending}>
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Valider Délibération
                         </Button>
                     )}
                     {examen.status === 'DELIBERE' && (
-                        <Button onClick={() => setTransitionTarget('PUBLIE')}>
-                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                            Publier Résultats
+                        <>
+                            <Button variant="outline" onClick={() => setTransitionTarget('CORRECTION_POST_DELIBERATION')}>
+                                <PenLine className="mr-2 h-4 w-4" />
+                                Correction complémentaire
+                            </Button>
+                            <Button onClick={() => setTransitionTarget('PUBLIE')}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Publier Résultats
+                            </Button>
+                        </>
+                    )}
+                    {examen.status === 'CORRECTION_POST_DELIBERATION' && (
+                        <>
+                            <Button variant="success" onClick={handleDeliberer} isLoading={delibererMutation.isPending}>
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Re-délibérer
+                            </Button>
+                            <Button onClick={() => setTransitionTarget('PUBLIE')}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Publier Résultats
+                            </Button>
+                        </>
+                    )}
+                    {examen.status === 'PUBLIE' && (
+                        <Button variant="outline" onClick={() => setTransitionTarget('CLOS')}>
+                            <Archive className="mr-2 h-4 w-4" />
+                            Clore l'examen
                         </Button>
                     )}
                 </div>
@@ -228,13 +272,13 @@ export default function ExamenDetailPage() {
             {/* ── Modal transition de phase ────────────────────────────────── */}
             <Modal
                 open={!!transitionTarget}
-                onOpenChange={(o) => { if (!o) setTransitionTarget(null); }}
+                onOpenChange={(o) => { if (!o) { setTransitionTarget(null); setDeliberationErrors([]); } }}
                 title="Confirmer le changement de phase"
                 description={`L'examen passera en phase « ${transitionTarget ? PHASE_LABELS[transitionTarget] : ''} ». Cette action est irréversible.`}
                 variant="danger"
                 footer={
                     <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setTransitionTarget(null)}>
+                        <Button variant="outline" onClick={() => { setTransitionTarget(null); setDeliberationErrors([]); }}>
                             Annuler
                         </Button>
                         <Button
@@ -247,9 +291,24 @@ export default function ExamenDetailPage() {
                     </div>
                 }
             >
-                <p className="text-sm text-slate-600">
-                    Assurez-vous que toutes les conditions préalables sont remplies avant de continuer.
-                </p>
+                {deliberationErrors.length > 0 ? (
+                    <div className="space-y-3">
+                        <p className="text-sm text-slate-600">
+                            La délibération a été effectuée avec <strong>{deliberationErrors.length} anomalie(s)</strong>. Vérifiez les candidats concernés avant de confirmer la transition.
+                        </p>
+                        <ul className="max-h-40 overflow-y-auto rounded-md bg-amber-50 border border-amber-200 p-3 space-y-1">
+                            {deliberationErrors.map((e) => (
+                                <li key={e.candidat_id} className="text-xs text-amber-800">
+                                    Candidat {e.candidat_id} : {e.message}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : (
+                    <p className="text-sm text-slate-600">
+                        Assurez-vous que toutes les conditions préalables sont remplies avant de continuer.
+                    </p>
+                )}
             </Modal>
         </div>
     );

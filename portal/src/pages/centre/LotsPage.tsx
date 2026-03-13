@@ -8,9 +8,12 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
 import { LotStatusBadge } from '@/components/ui/StatusBadge';
 import { Modal } from '@/components/ui/Modal';
-import { KeyRound, Package, RotateCcw } from 'lucide-react';
+import { KeyRound, Package, RotateCcw, Download } from 'lucide-react';
+import { toast } from 'sonner';
 import type { ExamenRow } from '@/types/domain';
 import type { LotWithDetails } from '@/services/lots';
+import { lotService } from '@/services/lots';
+import { generateLotExcel, downloadExcel } from '@/services/excelLot';
 
 export default function LotsPage() {
     const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
@@ -26,6 +29,7 @@ export default function LotsPage() {
 
     const [signerTarget, setSignerTarget] = useState<LotWithDetails | null>(null);
     const [resetTarget, setResetTarget] = useState<LotWithDetails | null>(null);
+    const [downloadingLotId, setDownloadingLotId] = useState<string | null>(null);
 
     const handleSigner = async () => {
         if (!signerTarget) return;
@@ -37,6 +41,24 @@ export default function LotsPage() {
         if (!resetTarget) return;
         await resetLotHmac.mutateAsync(resetTarget.id);
         setResetTarget(null);
+    };
+
+    const handleDownload = async (lot: LotWithDetails) => {
+        setDownloadingLotId(lot.id);
+        try {
+            const [candidats, discType] = await Promise.all([
+                lotService.fetchLotCandidats(lot.id),
+                lotService.fetchDisciplineType(lot.examen_discipline_id),
+            ]);
+            const data = generateLotExcel(lot, discType, candidats);
+            const filename = `Lot_${String(lot.lot_numero).padStart(3, '0')}_${lot.discipline_code}${lot.serie_code ? `_${lot.serie_code}` : ''}.xlsx`;
+            downloadExcel(data, filename);
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erreur lors du téléchargement';
+            toast.error(msg);
+        } finally {
+            setDownloadingLotId(null);
+        }
     };
 
     const columns: Column<LotWithDetails>[] = [
@@ -103,6 +125,17 @@ export default function LotsPage() {
                             Signer
                         </Button>
                     )}
+                    {row.hmac_signature && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownload(row)}
+                            isLoading={downloadingLotId === row.id}
+                        >
+                            <Download className="mr-1 h-3 w-3" />
+                            Télécharger
+                        </Button>
+                    )}
                     {isAdmin && row.hmac_signature && row.status === 'EN_ATTENTE' && (
                         <Button
                             variant="outline"
@@ -110,7 +143,7 @@ export default function LotsPage() {
                             onClick={() => setResetTarget(row)}
                         >
                             <RotateCcw className="mr-1 h-3 w-3" />
-                            Réinitialiser la signature
+                            Réinitialiser
                         </Button>
                     )}
                 </div>

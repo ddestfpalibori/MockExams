@@ -78,6 +78,19 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// HMAC-SHA256 — correspond exactement à encode(hmac(code, PEPPER, 'sha256'), 'hex') côté PostgreSQL
+async function hmacSha256Hex(message: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 function errJson(body: ErrorResponse, status: number): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -157,6 +170,11 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── 4. Résoudre candidat_id via numero_anonyme OU numero_table_formate ──
+    // Validation stricte du format avant interpolation dans .or() — bloque l'injection PostgREST
+    if (!/^[A-Z0-9\-]+$/.test(numero_anonyme)) {
+      return errJson(GENERIC_ERROR, 401);
+    }
+
     const { data: candidat } = await supabase
       .from('v_candidats_affichage' as any)
       .select('id, numero_anonyme, numero_table_formate, series!inner(libelle), etablissements!inner(nom)')
@@ -168,7 +186,8 @@ Deno.serve(async (req: Request) => {
     const candidatId = candidat?.id ?? null;
 
     // ── 5. Vérifier le code d'accès (hash) ─────────────────────────────────
-    const codeHash = await sha256Hex(code_acces); // I1 SHA-256 — migrer bcrypt en I2
+    const pepperSecret = Deno.env.get('CODE_ACCES_PEPPER') ?? '';
+    const codeHash = await hmacSha256Hex(code_acces, pepperSecret);
 
     const { data: codeEntry } = candidatId
       ? await supabase
