@@ -88,7 +88,7 @@ export function generateLotExcel(
 
 /** Déclenche le téléchargement d'un Uint8Array en tant que fichier .xlsx */
 export function downloadExcel(data: Uint8Array, filename: string): void {
-    const blob = new Blob([data], {
+    const blob = new Blob([new Uint8Array(data)], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
     const url = URL.createObjectURL(blob);
