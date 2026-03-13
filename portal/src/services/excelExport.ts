@@ -4,7 +4,6 @@ import type {
     ExportResultatsData,
     DisciplineExport,
     CandidatExport,
-    ResultatAnonymeExport,
 } from './exportService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -59,7 +58,25 @@ function setColWidths(ws: XLSX.WorkSheet, widths: number[]): void {
     ws['!cols'] = widths.map((w) => ({ wch: w }));
 }
 
-// ── Export Modèle B (nominatif — admin/chef_etab) ─────────────────────────────
+function uniqueSheetName(nom: string, used: Set<string>): string {
+    const base = nom.substring(0, 28).replace(/[\\/:?*[\]]/g, '_');
+    if (!used.has(base)) {
+        used.add(base);
+        return base;
+    }
+    for (let i = 2; i <= 99; i++) {
+        const candidate = `${base.substring(0, 25)}_${i}`;
+        if (!used.has(candidate)) {
+            used.add(candidate);
+            return candidate;
+        }
+    }
+    const fallback = `Etab_${used.size}`;
+    used.add(fallback);
+    return fallback;
+}
+
+// ── Export Modèle B (nominatif — admin uniquement) ────────────────────────────
 
 /**
  * Génère un classeur Excel avec une feuille par établissement.
@@ -68,6 +85,7 @@ function setColWidths(ws: XLSX.WorkSheet, widths: number[]): void {
  */
 export function generateExcelModelB(data: ExportResultatsData): Uint8Array {
     const wb = XLSX.utils.book_new();
+    const usedNames = new Set<string>();
 
     for (const etab of data.etablissements) {
         const rows = etab.candidats.map((c) =>
@@ -80,9 +98,7 @@ export function generateExcelModelB(data: ExportResultatsData): Uint8Array {
         const widths = [20, 20, 15, ...data.disciplines.map(() => 18), 10, 14];
         setColWidths(ws, widths);
 
-        // Nom de feuille : max 31 chars (limite Excel)
-        const sheetName = etab.nom.substring(0, 28).replace(/[\\/:?*[\]]/g, '_');
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.utils.book_append_sheet(wb, ws, uniqueSheetName(etab.nom, usedNames));
     }
 
     if (wb.SheetNames.length === 0) {
@@ -92,15 +108,15 @@ export function generateExcelModelB(data: ExportResultatsData): Uint8Array {
     return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array;
 }
 
-// ── Export Modèle A (anonyme — tutelle/admin) ─────────────────────────────────
+// ── Export Modèle A (anonyme — tutelle/admin/chef_etablissement) ──────────────
 
 /**
  * Génère un classeur Excel avec une feuille par établissement.
  * Colonnes : N° Anonyme | [disciplines] | Moyenne | Décision
- * Accessible : admin + tutelle + chef_etablissement.
  */
 export function generateExcelModelA(data: ExportResultatsData): Uint8Array {
     const wb = XLSX.utils.book_new();
+    const usedNames = new Set<string>();
 
     for (const etab of data.etablissements) {
         const rows = etab.candidats.map((c) =>
@@ -112,61 +128,11 @@ export function generateExcelModelA(data: ExportResultatsData): Uint8Array {
         const widths = [15, ...data.disciplines.map(() => 18), 10, 14];
         setColWidths(ws, widths);
 
-        const sheetName = etab.nom.substring(0, 28).replace(/[\\/:?*[\]]/g, '_');
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.utils.book_append_sheet(wb, ws, uniqueSheetName(etab.nom, usedNames));
     }
 
     if (wb.SheetNames.length === 0) {
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Résultats');
-    }
-
-    return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array;
-}
-
-// ── Export Modèle A simplifié (sans notes détaillées — depuis résultats simples) ──
-
-/**
- * Export rapide depuis résultats anonymes (sans Edge Function).
- * Colonnes : N° Anonyme | Moyenne | Décision
- * Pour tutelle quand les notes par discipline ne sont pas requises.
- */
-export function generateExcelAnonymeSimple(
-    resultats: ResultatAnonymeExport[],
-): Uint8Array {
-    // Grouper par établissement
-    const grouped = new Map<string, ResultatAnonymeExport[]>();
-    for (const r of resultats) {
-        const list = grouped.get(r.etablissement_nom) ?? [];
-        list.push(r);
-        grouped.set(r.etablissement_nom, list);
-    }
-
-    const wb = XLSX.utils.book_new();
-
-    // Feuille récapitulatif
-    const allRows = resultats.map((r) => ({
-        'Établissement': r.etablissement_nom,
-        'N° Anonyme': r.numero_anonyme ?? '—',
-        'Moyenne': formatMoyenne(r.moyenne_centimes),
-        'Décision': formatDecision(r.status),
-        'Phase': r.phase,
-    }));
-    const wsAll = XLSX.utils.json_to_sheet(allRows);
-    setColWidths(wsAll, [30, 15, 10, 14, 8]);
-    XLSX.utils.book_append_sheet(wb, wsAll, 'Tous');
-
-    // Une feuille par établissement
-    for (const [etabNom, rows] of grouped) {
-        const etabRows = rows.map((r) => ({
-            'N° Anonyme': r.numero_anonyme ?? '—',
-            'Moyenne': formatMoyenne(r.moyenne_centimes),
-            'Décision': formatDecision(r.status),
-            'Phase': r.phase,
-        }));
-        const ws = XLSX.utils.json_to_sheet(etabRows);
-        setColWidths(ws, [15, 10, 14, 8]);
-        const sheetName = etabNom.substring(0, 28).replace(/[\\/:?*[\]]/g, '_');
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
     }
 
     return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array;

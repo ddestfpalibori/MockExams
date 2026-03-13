@@ -11,7 +11,9 @@
  *  - disciplines[] : libellé + coefficient par discipline de l'examen
  *  - etablissements[] : par établissement → candidats → notes par discipline
  *
- * Données PII (nom_enc / prenom_enc) : lues via service_role (bypass RLS).
+ * Données PII (nom/prenom) : renvoyées uniquement si include_nominatif=true ET rôle admin.
+ * Les colonnes nom_enc/prenom_enc sont lues via service_role (bypass RLS) mais masquées
+ * côté réponse pour tous les rôles non-admin. Pas de chiffrement implémenté côté import.
  * Codes d'accès : non exportables (stockés hashés bcrypt, non réversibles).
  */
 
@@ -23,6 +25,8 @@ import { requireAuth, createServiceClient, AuthError } from '../_shared/auth.ts'
 interface ExportRequest {
   examen_id: string;
   etablissement_id?: string;
+  /** Inclure nom/prénom dans la réponse. Réservé admin uniquement — ignoré sinon. */
+  include_nominatif?: boolean;
 }
 
 interface DisciplineExport {
@@ -90,7 +94,14 @@ function validateRequest(body: unknown): ExportRequest {
   if (b.etablissement_id !== undefined && typeof b.etablissement_id !== 'string') {
     throw new ValidationError('etablissement_id invalide');
   }
-  return { examen_id: b.examen_id, etablissement_id: b.etablissement_id as string | undefined };
+  if (b.include_nominatif !== undefined && typeof b.include_nominatif !== 'boolean') {
+    throw new ValidationError('include_nominatif invalide');
+  }
+  return {
+    examen_id: b.examen_id,
+    etablissement_id: b.etablissement_id as string | undefined,
+    include_nominatif: b.include_nominatif as boolean | undefined,
+  };
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -111,6 +122,9 @@ Deno.serve(async (req: Request) => {
 
     const input = validateRequest(await req.json());
     const supabase = createServiceClient();
+
+    // include_nominatif réservé à l'admin — ignoré pour les autres rôles
+    const includeNominatif = role === 'admin' && input.include_nominatif === true;
 
     // ── Vérifier accès établissement pour chef_etablissement ────────────────
     let etablissementFilter: string | null = input.etablissement_id ?? null;
@@ -226,7 +240,7 @@ Deno.serve(async (req: Request) => {
         lots!inner(examen_discipline_id)
       `)
       .in('candidat_id', candidatIds)
-      .not('lots.examen_id', 'is', null);
+      .eq('lots.examen_id', input.examen_id);
 
     if (saisiesError) throw saisiesError;
 
@@ -268,8 +282,8 @@ Deno.serve(async (req: Request) => {
       const candidatExport: CandidatExport = {
         candidat_id: cand.id,
         numero_anonyme: cand.numero_anonyme,
-        nom: cand.nom_enc,       // nom_enc contient le nom en texte brut (chiffrement non implémenté côté import)
-        prenom: cand.prenom_enc, // idem prenom_enc
+        nom: includeNominatif ? cand.nom_enc : '',
+        prenom: includeNominatif ? cand.prenom_enc : '',
         sexe: cand.sexe,
         moyenne_centimes: r.moyenne_centimes,
         status: r.status,

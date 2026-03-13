@@ -35,7 +35,8 @@ export function ExportModal({
         setError(null);
 
         try {
-            const data = await fetchExportData(examenId, etablissementId);
+            const includeNominatif = type === 'excel_b' || type === 'pdf_b';
+            const data = await fetchExportData(examenId, etablissementId, includeNominatif);
 
             if (data.etablissements.length === 0) {
                 setError('Aucun résultat à exporter pour cet examen.');

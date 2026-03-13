@@ -2,6 +2,13 @@ import type { ExportResultatsData, CandidatExport, DisciplineExport } from './ex
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 function formatMoyenne(centimes: number | null): string {
     if (centimes == null) return '—';
     return (centimes / 100).toFixed(2);
@@ -43,8 +50,8 @@ function buildTableRows(
         let cells = '';
 
         if (includeNom) {
-            cells += `<td style="padding:4px 6px">${c.nom}</td>`;
-            cells += `<td style="padding:4px 6px">${c.prenom}</td>`;
+            cells += `<td style="padding:4px 6px">${escapeHtml(c.nom)}</td>`;
+            cells += `<td style="padding:4px 6px">${escapeHtml(c.prenom)}</td>`;
         }
         cells += `<td style="padding:4px 6px;font-family:monospace">${c.numero_anonyme ?? '—'}</td>`;
 
@@ -103,9 +110,9 @@ function buildPvHtml(
             : '0.0';
 
         sections += `
-            <div style="margin-bottom:32px;page-break-inside:avoid">
-                <h2 style="font-size:14px;font-weight:600;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4px;margin-bottom:8px">
-                    ${etab.nom}
+            <div style="margin-bottom:32px">
+                <h2 style="font-size:14px;font-weight:600;color:#1e3a5f;border-bottom:2px solid #1e3a5f;padding-bottom:4px;margin-bottom:8px;page-break-after:avoid">
+                    ${escapeHtml(etab.nom)}
                     <span style="font-size:11px;font-weight:400;color:#475569;margin-left:12px">
                         ${etab.candidats.length} candidat(s) — ${admis} admis(es) — Taux : ${taux}%
                     </span>
@@ -137,13 +144,13 @@ function buildPvHtml(
             ${titre}
         </h1>
         <div style="font-size:12px;color:#475569">
-            ${data.examen_libelle} — Session ${data.examen_annee}
+            ${escapeHtml(data.examen_libelle)} — Session ${data.examen_annee}
         </div>
         <div style="font-size:11px;color:#64748b;margin-top:4px">
-            Genere le ${now} —
+            Généré le ${now} —
             Total : <strong>${totalCandidats}</strong> candidats —
             Admis : <strong>${totalAdmis}</strong> —
-            Taux de reussite : <strong>${tauxReussite}%</strong>
+            Taux de réussite : <strong>${tauxReussite}%</strong>
         </div>
     </div>
 
@@ -167,7 +174,7 @@ function buildPvHtml(
  * L'utilisateur peut "Enregistrer en PDF" via le dialogue d'impression du navigateur.
  */
 export function printPvDeliberationAnonyme(data: ExportResultatsData): void {
-    const html = buildPvHtml(data, false, 'Proces-Verbal de Deliberation');
+    const html = buildPvHtml(data, false, 'Procès-Verbal de Délibération');
     openPrintWindow(html);
 }
 
@@ -176,7 +183,7 @@ export function printPvDeliberationAnonyme(data: ExportResultatsData): void {
  * Accessible admin uniquement.
  */
 export function printPvDeliberationNominatif(data: ExportResultatsData): void {
-    const html = buildPvHtml(data, true, 'Proces-Verbal de Deliberation — Liste Nominative');
+    const html = buildPvHtml(data, true, 'Procès-Verbal de Délibération — Liste Nominative');
     openPrintWindow(html);
 }
 
