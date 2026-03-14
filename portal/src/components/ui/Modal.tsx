@@ -27,11 +27,12 @@ export function Modal({
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
                 <Dialog.Content
                     className={cn(
                         'fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-                        'rounded-xl bg-white shadow-xl',
+                        'rounded-xl bg-surface shadow-brand-xl border border-border',
+                        'duration-300 ease-out',
                         'data-[state=open]:animate-in data-[state=closed]:animate-out',
                         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
                         'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -43,24 +44,24 @@ export function Modal({
                     {/* Header */}
                     <div className={cn(
                         'flex items-center justify-between px-6 py-4 border-b',
-                        variant === 'danger' ? 'border-danger/20 bg-danger/5' : 'border-slate-100'
+                        variant === 'danger' ? 'border-danger/20 bg-danger/5' : 'border-border'
                     )}>
                         <div>
                             <Dialog.Title className={cn(
                                 'text-base font-semibold',
-                                variant === 'danger' ? 'text-danger' : 'text-slate-900'
+                                variant === 'danger' ? 'text-danger' : 'text-primary'
                             )}>
                                 {title}
                             </Dialog.Title>
                             {description && (
-                                <Dialog.Description className="text-sm text-slate-500 mt-0.5">
+                                <Dialog.Description className="text-sm text-secondary mt-0.5">
                                     {description}
                                 </Dialog.Description>
                             )}
                         </div>
                         <Dialog.Close asChild>
                             <button
-                                className="rounded-md p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                                className="rounded-md p-1 text-muted hover:text-primary hover:bg-surface-hover transition-colors"
                                 aria-label="Fermer"
                             >
                                 <X size={18} />
@@ -75,7 +76,7 @@ export function Modal({
 
                     {/* Footer */}
                     {footer && (
-                        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100">
+                        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
                             {footer}
                         </div>
                     )}

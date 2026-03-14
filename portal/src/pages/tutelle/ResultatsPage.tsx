@@ -70,7 +70,7 @@ export default function ResultatsPage() {
             key: 'phase',
             header: 'Phase',
             cell: (row) => (
-                <span className="text-sm text-slate-500">Phase {row.phase}</span>
+                <span className="text-sm text-secondary">Phase {row.phase}</span>
             ),
         },
         {
@@ -78,7 +78,7 @@ export default function ResultatsPage() {
             header: 'Délibéré le',
             cell: (row) =>
                 row.delibere_at ? (
-                    <span className="text-sm text-slate-500">
+                    <span className="text-sm text-secondary">
                         {new Date(row.delibere_at).toLocaleDateString('fr-FR')}
                     </span>
                 ) : (
@@ -90,15 +90,15 @@ export default function ResultatsPage() {
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">Résultats</h1>
-                <p className="text-slate-500">
+                <h1 className="text-3xl font-bold tracking-tight">Résultats</h1>
+                <p className="text-secondary">
                     Consultation des résultats de délibération (lecture seule).
                 </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <select
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary sm:w-72"
+                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary sm:w-72"
                     value={examenId}
                     onChange={(e) => {
                         setExamenId(e.target.value);
@@ -120,7 +120,7 @@ export default function ResultatsPage() {
                 </select>
 
                 <select
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
                     value={statusFilter}
                     onChange={(e) => {
                         setStatusFilter(e.target.value as ResultatStatus | '');

@@ -104,10 +104,10 @@ export default function CentreDashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight">
                         Tableau de Bord Centre
                     </h1>
-                    <p className="text-slate-500">
+                    <p className="text-secondary">
                         {activeCentre
                             ? `${activeCentre.nom} (${activeCentre.code})`
                             : 'Chargement...'}
@@ -158,7 +158,7 @@ export default function CentreDashboard() {
             </div>
 
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-slate-900">Examens en cours</h2>
+                <h2 className="text-xl font-semibold">Examens en cours</h2>
                 <DataTable
                     columns={columns}
                     data={examensActifs}

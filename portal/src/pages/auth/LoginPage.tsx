@@ -57,60 +57,60 @@ export const LoginPage = () => {
     return (
         <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
             <div>
-                <label htmlFor="identifier" className="block text-sm font-medium text-slate-700">
-                    Identifiant (email ou nom d&apos;utilisateur)
+                <label htmlFor="identifier" className="block text-sm font-semibold text-secondary mb-1.5">
+                    Identifiant
                 </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Mail className="h-5 w-5 text-slate-400" />
+                <div className="relative rounded-md shadow-sm group">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <Mail className="h-4 w-4 text-muted group-focus-within:text-brand-primary transition-colors" />
                     </div>
                     <input
                         id="identifier"
                         type="text"
-                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${errors.identifier
-                            ? 'border-danger bg-red-50 focus-visible:ring-danger focus-visible:border-danger'
-                            : 'border-slate-300 focus-visible:ring-brand-primary focus-visible:border-brand-primary'
+                        className={`block w-full pl-10 sm:text-sm rounded-xl border px-3 py-2.5 bg-surface transition-all ${errors.identifier
+                            ? 'border-danger bg-danger/5 focus-visible:ring-danger/20 focus-visible:border-danger'
+                            : 'border-border focus-visible:ring-brand-primary/20 focus-visible:border-brand-primary'
                             }`}
-                        placeholder="email ou nom d'utilisateur"
+                        placeholder="Email ou utilisateur"
                         {...register('identifier')}
                     />
                 </div>
                 {errors.identifier && (
-                    <p className="mt-1 text-sm text-danger">{errors.identifier.message}</p>
+                    <p className="mt-1.5 text-xs font-medium text-danger pl-1 uppercase tracking-wider">{errors.identifier.message}</p>
                 )}
             </div>
 
             <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="password" className="block text-sm font-semibold text-secondary mb-1.5">
                     Mot de passe
                 </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-slate-400" />
+                <div className="relative rounded-md shadow-sm group">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <Lock className="h-4 w-4 text-muted group-focus-within:text-brand-primary transition-colors" />
                     </div>
                     <input
                         id="password"
                         type="password"
-                        className={`block w-full pl-10 sm:text-sm rounded-md border px-3 py-2 transition-colors ${errors.password
-                            ? 'border-danger bg-red-50 focus-visible:ring-danger focus-visible:border-danger'
-                            : 'border-slate-300 focus-visible:ring-brand-primary focus-visible:border-brand-primary'
+                        className={`block w-full pl-10 sm:text-sm rounded-xl border px-3 py-2.5 bg-surface transition-all ${errors.password
+                            ? 'border-danger bg-danger/5 focus-visible:ring-danger/20 focus-visible:border-danger'
+                            : 'border-border focus-visible:ring-brand-primary/20 focus-visible:border-brand-primary'
                             }`}
                         placeholder="••••••••"
                         {...register('password')}
                     />
                 </div>
                 {errors.password && (
-                    <p className="mt-1 text-sm text-danger">{errors.password.message}</p>
+                    <p className="mt-1.5 text-xs font-medium text-danger pl-1 uppercase tracking-wider">{errors.password.message}</p>
                 )}
             </div>
 
-            <div>
+            <div className="pt-2">
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full btn-brand flex justify-center py-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full btn-brand flex justify-center py-3 rounded-xl shadow-brand-md transform active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold"
                 >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Se connecter'}
+                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Accéder au Portail'}
                 </button>
             </div>
         </form>

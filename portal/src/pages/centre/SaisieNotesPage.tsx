@@ -109,7 +109,7 @@ export default function SaisieNotesPage() {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight">
                         Saisie des notes
                     </h1>
                     <p className="text-slate-500">
@@ -137,13 +137,13 @@ export default function SaisieNotesPage() {
             )}
 
             {/* Sélection examen */}
-            <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">
+            <div className="rounded-lg border border-border bg-surface p-6 space-y-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                    <label className="block text-sm font-medium text-primary mb-1">
                         Examen
                     </label>
                     <select
-                        className="h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                        className="h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
                         value={examenId}
                         onChange={(e) => {
                             setExamenId(e.target.value);
@@ -166,7 +166,7 @@ export default function SaisieNotesPage() {
                 {/* Sélection lot */}
                 {examenId && (
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-primary mb-1">
                             Lot de correction
                         </label>
                         {lotsLoading ? (
@@ -189,7 +189,7 @@ export default function SaisieNotesPage() {
                                             'flex items-center justify-between rounded-md border p-3 text-left transition-colors',
                                             selectedLot?.id === lot.id
                                                 ? 'border-brand-primary bg-brand-primary/5'
-                                                : 'border-slate-200 hover:border-brand-primary/50'
+                                                : 'border-border hover:border-brand-primary/50'
                                         )}
                                     >
                                         <div>
@@ -212,8 +212,8 @@ export default function SaisieNotesPage() {
 
             {/* Upload */}
             {selectedLot && (
-                <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">
-                    <h2 className="font-semibold text-slate-900">
+                <div className="rounded-lg border border-border bg-surface p-6 space-y-4">
+                    <h2 className="font-semibold text-primary">
                         Importer les notes — Lot #{selectedLot.lot_numero}
                     </h2>
 
@@ -231,14 +231,14 @@ export default function SaisieNotesPage() {
                             'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors',
                             dragOver
                                 ? 'border-brand-primary bg-brand-primary/5'
-                                : 'border-slate-200 hover:border-brand-primary/50 hover:bg-slate-50'
+                                : 'border-border hover:border-brand-primary/50 hover:bg-surface-hover'
                         )}
                     >
                         <Upload className="h-8 w-8 text-slate-300 mb-2" />
                         {file ? (
-                            <p className="font-medium text-slate-700">{file.name}</p>
+                            <p className="font-medium text-primary">{file.name}</p>
                         ) : (
-                            <p className="text-sm text-slate-500">
+                            <p className="text-sm text-secondary">
                                 Glissez le bon de correction Excel ici
                             </p>
                         )}
@@ -267,8 +267,8 @@ export default function SaisieNotesPage() {
 
             {/* Résultat */}
             {result && (
-                <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-4">
-                    <h2 className="font-semibold text-slate-900">Résultat de l'import</h2>
+                <div className="rounded-lg border border-border bg-surface p-6 space-y-4">
+                    <h2 className="font-semibold text-primary">Résultat de l'import</h2>
                     <div className="grid grid-cols-2 gap-4 max-w-sm">
                         <div className="flex items-center gap-3 rounded-md bg-green-50 p-4">
                             <CheckCircle className="h-5 w-5 text-success" />

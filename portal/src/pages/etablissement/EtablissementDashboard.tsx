@@ -102,10 +102,10 @@ export default function EtablissementDashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight">
                         Tableau de Bord Établissement
                     </h1>
-                    <p className="text-slate-500">
+                    <p className="text-secondary">
                         {activeEtablissement
                             ? `${activeEtablissement.nom} (${activeEtablissement.code})`
                             : 'Chargement...'}
@@ -151,7 +151,7 @@ export default function EtablissementDashboard() {
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-slate-900">Examens en cours</h2>
+                    <h2 className="text-xl font-semibold">Examens en cours</h2>
                     <Button variant="ghost" size="sm" onClick={() => navigate('/etablissement/candidats')}>
                         Voir les candidats
                     </Button>

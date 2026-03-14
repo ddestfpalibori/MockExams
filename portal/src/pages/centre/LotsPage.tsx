@@ -155,7 +155,7 @@ export default function LotsPage() {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="text-3xl font-bold tracking-tight">
                         Lots de correction
                     </h1>
                     <p className="text-slate-500">
@@ -176,7 +176,7 @@ export default function LotsPage() {
             <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-slate-700">Examen :</label>
                 <select
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-72"
+                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-72"
                     value={examenId}
                     onChange={(e) => setExamenId(e.target.value)}
                 >

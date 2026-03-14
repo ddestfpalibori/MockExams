@@ -132,7 +132,7 @@ function Stepper({ current }: { current: number }) {
                                 'h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all',
                                 done && 'bg-brand-primary border-brand-primary text-white',
                                 active && 'border-brand-primary text-brand-primary bg-brand-primary/5',
-                                !done && !active && 'border-slate-200 text-slate-400 bg-white',
+                                !done && !active && 'border-border text-muted bg-surface',
                             )}>
                                 {done ? <Check className="h-4 w-4" /> : step}
                             </div>
@@ -183,8 +183,8 @@ function ToggleField({ control, name, label, hint }: ToggleFieldProps) {
                         )} />
                     </div>
                     <div>
-                        <span className="text-sm font-medium text-slate-700">{label}</span>
-                        {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
+                        <span className="text-sm font-medium text-primary">{label}</span>
+                        {hint && <p className="text-xs text-muted mt-0.5">{hint}</p>}
                     </div>
                 </label>
             )}
@@ -232,17 +232,17 @@ function ConfirmationStep({ control }: { control: Control<FormValues> }) {
 
     return (
         <>
-            <h2 className="text-lg font-semibold text-slate-900 border-b border-slate-100 pb-3">
+            <h2 className="text-lg font-semibold border-b border-slate-100 pb-3">
                 Récapitulatif avant validation
             </h2>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-secondary mb-4">
                 Vérifiez les paramètres ci-dessous avant de confirmer.
             </p>
-            <dl className="space-y-0 divide-y divide-slate-50">
+            <dl className="space-y-0 divide-y divide-border/50">
                 {rows.map((row) => (
                     <div key={row.label} className="flex justify-between py-2.5">
-                        <dt className="text-sm text-slate-500 w-48 flex-shrink-0">{row.label}</dt>
-                        <dd className="text-sm font-medium text-slate-900 text-right">{row.value}</dd>
+                        <dt className="text-sm text-secondary w-48 flex-shrink-0">{row.label}</dt>
+                        <dd className="text-sm font-medium text-primary text-right">{row.value}</dd>
                     </div>
                 ))}
             </dl>
@@ -376,10 +376,10 @@ export default function ExamenFormPage() {
         <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500">
             {/* En-tête */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-3xl font-bold tracking-tight">
                     {isEdit ? 'Modifier l\'examen' : 'Nouvel examen'}
                 </h1>
-                <p className="text-slate-500 mt-1">
+                <p className="text-secondary mt-1">
                     {isEdit
                         ? `Modification de « ${examen?.libelle} »`
                         : 'Configurez les paramètres de la session d\'examens en 4 étapes.'}
@@ -391,12 +391,12 @@ export default function ExamenFormPage() {
 
             {/* Formulaire */}
             <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-6 space-y-5">
+                <div className="rounded-xl border border-border bg-surface shadow-sm p-6 space-y-5">
 
                     {/* ── Étape 1 — Identification ─────────────────────────────── */}
                     {step === 1 && (
                         <>
-                            <h2 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3">
+                            <h2 className="text-base font-semibold border-b border-slate-100 pb-3">
                                 Identification de l'examen
                             </h2>
                             <FormField label="Code examen" required error={errors.code?.message}
@@ -428,7 +428,7 @@ export default function ExamenFormPage() {
                     {/* ── Étape 2 — Paramètres de composition ──────────────────── */}
                     {step === 2 && (
                         <>
-                            <h2 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3">
+                            <h2 className="text-base font-semibold border-b border-slate-100 pb-3">
                                 Paramètres de composition
                             </h2>
 
@@ -564,7 +564,7 @@ export default function ExamenFormPage() {
                     {/* ── Étape 3 — Délibération & Options ─────────────────────── */}
                     {step === 3 && (
                         <>
-                            <h2 className="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3">
+                            <h2 className="text-base font-semibold border-b border-slate-100 pb-3">
                                 Délibération &amp; Options d'épreuves
                             </h2>
                             <FormField label="Mode de délibération" required>

@@ -28,15 +28,15 @@ export function DataTable<T>({
     rowKey,
 }: DataTableProps<T>) {
     return (
-        <div className={cn('w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm', className)}>
+        <div className={cn('w-full overflow-auto rounded-xl border border-border bg-surface shadow-brand-sm', className)}>
             <table className="w-full text-sm">
                 <thead>
-                    <tr className="border-b border-slate-100 bg-slate-50">
+                    <tr className="border-b border-border bg-surface-hover">
                         {columns.map((col) => (
                             <th
                                 key={col.key}
                                 className={cn(
-                                    'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500',
+                                    'px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-secondary',
                                     col.className
                                 )}
                             >
@@ -45,12 +45,12 @@ export function DataTable<T>({
                         ))}
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                     {isLoading ? (
                         Array.from({ length: 5 }).map((_, i) => (
                             <tr key={i}>
                                 {columns.map((col) => (
-                                    <td key={col.key} className="px-4 py-3">
+                                    <td key={col.key} className="px-4 py-4">
                                         <Skeleton variant="line" size="sm" />
                                     </td>
                                 ))}
@@ -60,7 +60,7 @@ export function DataTable<T>({
                         <tr>
                             <td
                                 colSpan={columns.length}
-                                className="px-4 py-12 text-center text-slate-400"
+                                className="px-4 py-12 text-center text-muted"
                             >
                                 {emptyMessage}
                             </td>
@@ -69,12 +69,12 @@ export function DataTable<T>({
                         data.map((row) => (
                             <tr
                                 key={rowKey(row)}
-                                className="hover:bg-slate-50 transition-colors"
+                                className="hover:bg-surface-hover transition-colors"
                             >
                                 {columns.map((col) => (
                                     <td
                                         key={col.key}
-                                        className={cn('px-4 py-3 text-slate-700', col.className)}
+                                        className={cn('px-4 py-4 text-primary', col.className)}
                                     >
                                         {col.cell(row)}
                                     </td>

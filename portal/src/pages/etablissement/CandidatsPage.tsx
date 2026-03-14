@@ -39,7 +39,7 @@ export default function CandidatsPage() {
         {
             key: 'serie_id',
             header: 'Série',
-            cell: (row) => <span className="text-sm text-slate-600">{row.serie_id ?? '—'}</span>,
+            cell: (row) => <span className="text-sm text-secondary">{row.serie_id ?? '—'}</span>,
         },
         {
             key: 'numero_table',
@@ -53,22 +53,22 @@ export default function CandidatsPage() {
         {
             key: 'salle_id',
             header: 'Salle',
-            cell: (row) => <span className="text-sm text-slate-600">{row.salle_id ?? '—'}</span>,
+            cell: (row) => <span className="text-sm text-secondary">{row.salle_id ?? '—'}</span>,
         },
     ];
 
     return (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">Candidats</h1>
-                <p className="text-slate-500">
+                <h1 className="text-3xl font-bold tracking-tight">Candidats</h1>
+                <p className="text-secondary">
                     Consultation des candidats inscrits (données non-sensibles uniquement).
                 </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <select
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary sm:w-64"
+                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary sm:w-64"
                     value={examenId}
                     onChange={(e) => {
                         setExamenId(e.target.value);

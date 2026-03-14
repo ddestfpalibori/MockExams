@@ -117,7 +117,7 @@ export default function UtilisateursPage() {
             const msg =
                 err instanceof Error && 'context' in err
                     ? (err as { context?: { json?: { error?: string } } }).context?.json?.error ??
-                      err.message
+                    err.message
                     : err instanceof Error
                         ? err.message
                         : 'Erreur inconnue';
@@ -143,7 +143,7 @@ export default function UtilisateursPage() {
             const msg =
                 err instanceof Error && 'context' in err
                     ? (err as { context?: { json?: { error?: string } } }).context?.json?.error ??
-                      err.message
+                    err.message
                     : err instanceof Error
                         ? err.message
                         : 'Erreur inconnue';
@@ -164,7 +164,7 @@ export default function UtilisateursPage() {
             const msg =
                 err instanceof Error && 'context' in err
                     ? (err as { context?: { json?: { error?: string } } }).context?.json?.error ??
-                      err.message
+                    err.message
                     : err instanceof Error
                         ? err.message
                         : 'Erreur inconnue';
@@ -179,7 +179,7 @@ export default function UtilisateursPage() {
             key: 'nom',
             header: 'Nom',
             cell: (row) => (
-                <span className="font-medium text-slate-900">
+                <span className="font-medium text-primary">
                     {row.prenom} {row.nom}
                 </span>
             ),
@@ -197,7 +197,7 @@ export default function UtilisateursPage() {
             key: 'telephone',
             header: 'Téléphone',
             cell: (row) => (
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-secondary">
                     {row.telephone ?? '—'}
                 </span>
             ),
@@ -261,8 +261,8 @@ export default function UtilisateursPage() {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Utilisateurs</h1>
-                    <p className="text-slate-500">Gérez les comptes et les rôles d'accès à la plateforme.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Utilisateurs</h1>
+                    <p className="text-secondary">Gérez les comptes et les rôles d'accès à la plateforme.</p>
                 </div>
                 <Button onClick={openCreate}>
                     <Plus className="mr-2 h-4 w-4" />

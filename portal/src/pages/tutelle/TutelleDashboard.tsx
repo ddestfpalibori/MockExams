@@ -53,10 +53,10 @@ export default function TutelleDashboard() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-3xl font-bold tracking-tight">
                     Tableau de Bord Tutelle
                 </h1>
-                <p className="text-slate-500">
+                <p className="text-secondary">
                     Suivi global de toutes les sessions d'examens (lecture seule).
                 </p>
             </div>
@@ -92,7 +92,7 @@ export default function TutelleDashboard() {
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-slate-900">Tous les examens</h2>
+                    <h2 className="text-xl font-semibold">Tous les examens</h2>
                     <Button
                         variant="ghost"
                         size="sm"

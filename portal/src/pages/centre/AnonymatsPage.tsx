@@ -58,10 +58,10 @@ export default function AnonymatsPage() {
     return (
         <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-3xl font-bold tracking-tight">
                     {anonymatActif ? 'Numéros anonymes' : 'Identifiants de saisie'}
                 </h1>
-                <p className="text-slate-500">
+                <p className="text-secondary">
                     {anonymatActif
                         ? 'Générez les numéros d\'anonymat pour les candidats de votre centre (F05).'
                         : 'Générez les identifiants basés sur les numéros de table pour les candidats de votre centre (F05).'}
@@ -85,7 +85,7 @@ export default function AnonymatsPage() {
                         Examen
                     </label>
                     <select
-                        className="h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                        className="h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
                         value={examenId}
                         onChange={(e) => {
                             setExamenId(e.target.value);
@@ -139,7 +139,7 @@ export default function AnonymatsPage() {
                     <CheckCircle className="h-6 w-6 text-success flex-shrink-0" />
                     <div>
                         <p className="font-semibold text-success">Génération réussie</p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-secondary">
                             {lastResult} {anonymatActif ? 'numéro(s) anonyme(s)' : 'identifiant(s)'} généré(s).
                         </p>
                     </div>
@@ -161,7 +161,7 @@ export default function AnonymatsPage() {
                     </div>
                 }
             >
-                <p className="text-slate-600">
+                <p className="text-secondary">
                     Vous allez générer {anonymatActif ? 'les numéros anonymes' : 'les identifiants'}
                     {' '}pour les candidats de l'examen <strong>{examenSelectionne?.libelle}</strong>
                     {' '}dans votre centre. Les candidats déjà numérotés ne sont pas affectés.

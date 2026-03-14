@@ -4,21 +4,83 @@
 
 @layer base {
   :root {
-    /* Le thème par défaut "Slate/Bleu" de l'Institution DDEST-FP */
-    --brand-primary: #1e40af; /* blue-800 */
-    --brand-secondary: #0f172a; /* slate-900 */
-    --brand-subtle: #f8fafc; /* slate-50 */
-    
+    /* Marques Sémantiques (DDEST-FP) */
+    --brand-primary: #1e40af;
+    /* blue-800 */
+    --brand-secondary: #0f172a;
+    /* slate-900 */
+
+    /* Thème Clair : Tokens Sémantiques Premium */
+    --bg-background: #f8fafc;
+    /* slate-50 */
+    --bg-surface: #ffffff;
+    /* white */
+    --bg-surface-hover: #f1f5f9;
+    /* slate-100 */
+
+    --text-primary: #0f172a;
+    /* slate-900 */
+    --text-secondary: #64748b;
+    /* slate-500 */
+    --text-muted: #94a3b8;
+    /* slate-400 */
+
+    --border-color: #e2e8f0;
+    /* slate-200 */
+  }
+
+  .dark {
+    /* Thème Sombre : Soft Dark (Optimisé style Supabase) */
+    --bg-background: #1c1c1c;
+    /* Gris anthracite au lieu de noir pur */
+    --bg-surface: #262626;
+    /* Surface distinguable */
+    --bg-surface-hover: #2d2d2d;
+
+    --text-primary: #f5f5f5;
+    --text-secondary: #a0a0a0;
+    --text-muted: #707070;
+
+    --border-color: #333333;
+    /* Bordures plus visibles */
+  }
+
+  /* Définition racine pour appliquer la couleur globale */
+  body {
+    background-color: var(--bg-background);
+    color: var(--text-primary);
     font-family: 'Inter', system-ui, sans-serif;
-    background-color: var(--brand-subtle);
-    color: var(--brand-secondary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Harmonisation des titres en mode sombre */
+  .dark h1,
+  .dark h2 {
+    color: #60a5fa;
+    /* Bleu clair harmonieux (Blue-400) */
   }
 }
 
 @layer utilities {
-  .text-brand-primary { color: var(--brand-primary); }
-  .bg-brand-primary { background-color: var(--brand-primary); }
+  .text-brand-primary {
+    color: var(--brand-primary);
+  }
+
+  .bg-brand-primary {
+    background-color: var(--brand-primary);
+  }
+
   .btn-brand {
-    @apply bg-brand-primary text-white hover:opacity-90 transition-opacity px-4 py-2 rounded-md font-medium;
+    background-color: var(--brand-primary);
+    color: #ffffff;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: opacity 0.2s;
+  }
+
+  .btn-brand:hover {
+    opacity: 0.9;
   }
 }

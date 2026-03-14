@@ -30,7 +30,7 @@ export function FormField({ label, error, required, hint, children, className }:
         <div className={cn('flex flex-col gap-1.5', className)}>
             <label
                 htmlFor={fieldId}
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-medium text-primary"
             >
                 {label}
                 {required && (
@@ -41,7 +41,7 @@ export function FormField({ label, error, required, hint, children, className }:
             {child}
 
             {hint && !error && (
-                <p id={`${fieldId}-hint`} className="text-xs text-slate-400">
+                <p id={`${fieldId}-hint`} className="text-xs text-muted">
                     {hint}
                 </p>
             )}
@@ -56,10 +56,10 @@ export function FormField({ label, error, required, hint, children, className }:
 }
 
 /** Styles partagés pour les inputs utilisés avec FormField */
-export const inputClassName = "w-full h-10 px-3 text-sm rounded-md border border-slate-200 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary placeholder:text-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+export const inputClassName = "w-full h-10 px-3 text-sm rounded-md border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary placeholder:text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** Styles partagés pour les selects utilisés avec FormField */
-export const selectClassName = "w-full h-10 px-3 text-sm rounded-md border border-slate-200 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+export const selectClassName = "w-full h-10 px-3 text-sm rounded-md border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** Input stylisé prêt à l'emploi avec FormField */
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -71,9 +71,9 @@ export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<H
     return (
         <textarea
             className={cn(
-                'w-full px-3 py-2 text-sm rounded-md border border-slate-200 bg-white resize-y min-h-[80px]',
+                'w-full px-3 py-2 text-sm rounded-md border border-border bg-surface resize-y min-h-[80px]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary',
-                'placeholder:text-slate-400 transition-colors',
+                'placeholder:text-muted transition-colors',
                 className
             )}
             {...props}

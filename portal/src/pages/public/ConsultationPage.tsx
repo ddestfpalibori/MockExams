@@ -111,16 +111,16 @@ export default function ConsultationPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col">
             {/* Header */}
-            <header className="bg-white border-b border-slate-200 py-4">
+            <header className="bg-surface border-b border-border py-4">
                 <div className="max-w-2xl mx-auto px-4 flex items-center gap-3">
                     <div className="h-8 w-8 rounded-md bg-brand-primary flex items-center justify-center">
                         <Search className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                        <h1 className="font-bold text-slate-900">Consultation des résultats</h1>
-                        <p className="text-xs text-slate-400">DDEST-FP Alibori</p>
+                        <h1 className="font-bold">Consultation des résultats</h1>
+                        <p className="text-xs text-secondary">DDEST-FP Alibori</p>
                     </div>
                 </div>
             </header>
@@ -128,10 +128,10 @@ export default function ConsultationPage() {
             <main className="flex-1 flex items-start justify-center pt-16 px-4">
                 <div className="w-full max-w-md space-y-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold text-slate-900">
+                        <h2 className="text-2xl font-bold">
                             Consultez votre résultat
                         </h2>
-                        <p className="text-slate-500 mt-1">
+                        <p className="text-secondary mt-1">
                             Saisissez le code de l'examen et votre identifiant.
                         </p>
                     </div>
@@ -139,7 +139,7 @@ export default function ConsultationPage() {
                     {result === null && (
                         <form
                             onSubmit={handleSearch}
-                            className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-4"
+                            className="bg-surface rounded-xl border border-border p-6 shadow-sm space-y-4"
                         >
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -150,7 +150,7 @@ export default function ConsultationPage() {
                                     value={examenCode}
                                     onChange={(e) => setExamenCode(e.target.value)}
                                     placeholder="Ex: BAC2024, BEPC2024..."
-                                    className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                                    className="w-full h-10 rounded-md border border-border bg-surface px-3 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-brand-primary"
                                     required
                                     disabled={!!isLocked}
                                     autoComplete="off"
@@ -166,7 +166,7 @@ export default function ConsultationPage() {
                                     value={numeroAnonyme}
                                     onChange={(e) => setNumeroAnonyme(e.target.value)}
                                     placeholder="Ex: 001234 ou C01-0042"
-                                    className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm uppercase font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                                    className="w-full h-10 rounded-md border border-border bg-surface px-3 text-sm uppercase font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary"
                                     required
                                     disabled={!!isLocked}
                                     autoComplete="off"
@@ -182,7 +182,7 @@ export default function ConsultationPage() {
                                     value={codeAcces}
                                     onChange={(e) => setCodeAcces(e.target.value)}
                                     placeholder="Code reçu sur votre souche"
-                                    className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                                    className="w-full h-10 rounded-md border border-border bg-surface px-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-primary"
                                     required
                                     disabled={!!isLocked}
                                     autoComplete="off"

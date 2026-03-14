@@ -19,9 +19,9 @@ export function Pagination({ page, pageSize, total, onPageChange, className }: P
 
     return (
         <div className={cn('flex items-center justify-between px-2 py-3', className)}>
-            <p className="text-sm text-slate-500">
-                Résultats <span className="font-medium text-slate-700">{from}-{to}</span>{' '}
-                sur <span className="font-medium text-slate-700">{total.toLocaleString('fr-FR')}</span>
+            <p className="text-sm text-secondary">
+                Résultats <span className="font-medium text-primary">{from}-{to}</span>{' '}
+                sur <span className="font-medium text-primary">{total.toLocaleString('fr-FR')}</span>
             </p>
 
             <div className="flex items-center gap-1">
@@ -37,7 +37,7 @@ export function Pagination({ page, pageSize, total, onPageChange, className }: P
 
                 {buildPageNumbers(page, totalPages).map((p, i) =>
                     p === '...' ? (
-                        <span key={`ellipsis-${i}`} className="px-2 text-slate-400">…</span>
+                        <span key={`ellipsis-${i}`} className="px-2 text-muted">…</span>
                     ) : (
                         <button
                             key={p}
@@ -46,7 +46,7 @@ export function Pagination({ page, pageSize, total, onPageChange, className }: P
                                 'h-8 w-8 rounded-md text-sm font-medium transition-colors',
                                 page === p
                                     ? 'bg-brand-primary text-white'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                    : 'text-secondary hover:bg-surface-hover'
                             )}
                             aria-current={page === p ? 'page' : undefined}
                         >

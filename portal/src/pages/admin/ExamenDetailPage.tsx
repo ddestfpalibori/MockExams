@@ -121,13 +121,13 @@ export default function ExamenDetailPage() {
         <div className="space-y-6 animate-in fade-in duration-500">
 
             {/* ── En-tête ─────────────────────────────────────────────────── */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-slate-200 pb-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-border pb-6">
                 <div>
                     <div className="flex items-center gap-3 flex-wrap">
-                        <h1 className="text-2xl font-bold text-slate-900">{examen.libelle}</h1>
+                        <h1 className="text-2xl font-bold">{examen.libelle}</h1>
                         <StatusBadge status={examen.status} />
                     </div>
-                    <p className="text-slate-500 text-sm mt-0.5">
+                    <p className="text-secondary text-sm mt-0.5">
                         Session {examen.annee} — <span className="font-mono">{examen.code}</span>
                     </p>
                 </div>
@@ -237,7 +237,7 @@ export default function ExamenDetailPage() {
             {/* ── Onglets ──────────────────────────────────────────────────── */}
             <div className="space-y-4">
                 {/* Barre de navigation */}
-                <div className="flex gap-1 border-b border-slate-200">
+                <div className="flex gap-1 border-b border-border">
                     {TABS.map((tab) => (
                         <button
                             key={tab.id}
@@ -246,7 +246,7 @@ export default function ExamenDetailPage() {
                                 'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors',
                                 activeTab === tab.id
                                     ? 'border-brand-primary text-brand-primary'
-                                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300',
+                                    : 'border-transparent text-secondary hover:text-primary hover:border-border',
                             )}
                         >
                             {tab.icon}
@@ -256,7 +256,7 @@ export default function ExamenDetailPage() {
                 </div>
 
                 {/* Contenu */}
-                <div className="rounded-lg border border-slate-200 bg-white shadow-sm p-6">
+                <div className="rounded-lg border border-border bg-surface shadow-sm p-6">
                     {activeTab === 'resume' && (
                         <ResumeTab examen={examen} />
                     )}
@@ -326,24 +326,26 @@ function ResumeTab({ examen }: { examen: ExamenRow }) {
         ...(examen.seuil_rattrapage !== null
             ? [{ label: 'Seuil rattrapage', value: `${examen.seuil_rattrapage} / 20` }]
             : []),
-        { label: 'Options actives', value: [
-            examen.oral_actif ? 'Oral' : null,
-            examen.eps_active ? 'EPS' : null,
-            examen.facultatif_actif ? 'Facultatif' : null,
-            examen.rattrapage_actif ? 'Rattrapage' : null,
-        ].filter(Boolean).join(', ') || 'Aucune' },
+        {
+            label: 'Options actives', value: [
+                examen.oral_actif ? 'Oral' : null,
+                examen.eps_active ? 'EPS' : null,
+                examen.facultatif_actif ? 'Facultatif' : null,
+                examen.rattrapage_actif ? 'Rattrapage' : null,
+            ].filter(Boolean).join(', ') || 'Aucune'
+        },
     ];
 
     return (
         <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-3">
+            <h3 className="text-sm font-semibold border-b border-slate-100 pb-3 mb-3">
                 Paramètres de délibération
             </h3>
             <dl className="divide-y divide-slate-50">
                 {items.map((item) => (
                     <div key={item.label} className="flex justify-between py-2.5">
-                        <dt className="text-sm text-slate-500 w-52 flex-shrink-0">{item.label}</dt>
-                        <dd className="text-sm font-medium text-slate-900 text-right">{item.value}</dd>
+                        <dt className="text-sm text-secondary w-52 flex-shrink-0">{item.label}</dt>
+                        <dd className="text-sm font-medium text-primary text-right">{item.value}</dd>
                     </div>
                 ))}
             </dl>

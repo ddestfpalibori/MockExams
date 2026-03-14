@@ -52,8 +52,8 @@ export default function AdminDashboard() {
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Tableau de Bord Admin</h1>
-                    <p className="text-slate-500">
+                    <h1 className="text-3xl font-bold tracking-tight">Tableau de Bord Admin</h1>
+                    <p className="text-secondary">
                         Bienvenue ! Voici un aperçu global de la session d'examens.
                     </p>
                 </div>

@@ -102,7 +102,7 @@ export default function SallesPage() {
         {
             key: 'ordre',
             header: '#',
-            cell: (row) => <span className="text-sm text-slate-400">{row.ordre}</span>,
+            cell: (row) => <span className="text-sm text-muted">{row.ordre}</span>,
         },
         {
             key: 'nom',
@@ -118,7 +118,7 @@ export default function SallesPage() {
             key: 'regle_affectation',
             header: 'Règle affectation',
             cell: (row) => (
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-secondary">
                     {AFFECTATION_LABELS[row.regle_affectation]}
                 </span>
             ),
@@ -149,8 +149,8 @@ export default function SallesPage() {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Salles</h1>
-                    <p className="text-slate-500">Gérez les salles de composition de votre centre.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Salles</h1>
+                    <p className="text-secondary">Gérez les salles de composition de votre centre.</p>
                 </div>
                 <Button onClick={openCreate} disabled={!examenId}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -170,7 +170,7 @@ export default function SallesPage() {
             <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-slate-700">Examen :</label>
                 <select
-                    className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-64"
+                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-64"
                     value={examenId}
                     onChange={(e) => setExamenId(e.target.value)}
                 >
@@ -263,7 +263,7 @@ export default function SallesPage() {
                     </div>
                 }
             >
-                <p className="text-slate-600">
+                <p className="text-secondary">
                     Êtes-vous sûr de vouloir supprimer la salle{' '}
                     <strong>{deleteModal?.nom}</strong> ? Cette action est irréversible.
                 </p>

@@ -156,6 +156,7 @@ function App() {
                                                 <Route path="anonymats" element={<AnonymatsPage />} />
                                                 <Route path="lots" element={<LotsPage />} />
                                                 <Route path="saisie" element={<SaisieNotesPage />} />
+                                                <Route path="analytics" element={<AnalyticsPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
@@ -174,6 +175,7 @@ function App() {
                                                 <Route index element={<EtablissementDashboard />} />
                                                 <Route path="candidats" element={<CandidatsEtabPage />} />
                                                 <Route path="import" element={<ImportPage />} />
+                                                <Route path="analytics" element={<AnalyticsPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>

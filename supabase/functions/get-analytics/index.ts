@@ -2,7 +2,7 @@
  * Edge Function : get-analytics
  * M13 — Analyses multidimensionnelles des résultats d'examen
  *
- * Accès : admin | tutelle
+ * Accès : admin | tutelle | chef_etablissement | chef_centre
  *
  * POST /functions/v1/get-analytics
  * Body : { examen_id: string }
@@ -59,7 +59,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { role } = await requireAuth(req);
 
-    if (role !== 'admin' && role !== 'tutelle') {
+    if (role !== 'admin' && role !== 'tutelle' && role !== 'chef_etablissement' && role !== 'chef_centre') {
       return errJson({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
     }
 

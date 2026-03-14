@@ -34,10 +34,10 @@ export default function AffectationPage() {
     return (
         <div className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                <h1 className="text-3xl font-bold tracking-tight">
                     Affectation des candidats
                 </h1>
-                <p className="text-slate-500">
+                <p className="text-secondary">
                     Répartissez automatiquement les candidats dans les salles de votre centre (F04).
                 </p>
             </div>
@@ -51,13 +51,13 @@ export default function AffectationPage() {
                 />
             )}
 
-            <div className="rounded-lg border border-slate-200 bg-white p-6 space-y-6">
+            <div className="rounded-lg border border-border bg-surface p-6 space-y-6">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                         Examen
                     </label>
                     <select
-                        className="h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                        className="h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
                         value={examenId}
                         onChange={(e) => {
                             setExamenId(e.target.value);
@@ -113,7 +113,7 @@ export default function AffectationPage() {
                     <CheckCircle className="h-6 w-6 text-success flex-shrink-0" />
                     <div>
                         <p className="font-semibold text-success">Affectation réussie</p>
-                        <p className="text-sm text-slate-600">
+                        <p className="text-sm text-secondary">
                             {lastResult} candidat(s) affecté(s) aux salles.
                         </p>
                     </div>
@@ -135,7 +135,7 @@ export default function AffectationPage() {
                     </div>
                 }
             >
-                <p className="text-slate-600">
+                <p className="text-secondary">
                     Vous allez affecter les candidats de l'examen{' '}
                     <strong>{examenSelectionne?.libelle}</strong> aux salles de votre centre.
                     Cette opération est sûre et peut être relancée.
