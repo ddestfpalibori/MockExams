@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { efInvoke } from '@/lib/efInvoke';
 import type { ResultatStatus } from '@/types/domain';
 
 // ── Types partagés ────────────────────────────────────────────────────────────
@@ -54,15 +54,10 @@ export async function fetchExportData(
     etablissementId?: string,
     includeNominatif = false,
 ): Promise<ExportResultatsData> {
-    const { data, error } = await supabase.functions.invoke('export-results', {
-        body: {
-            examen_id: examenId,
-            ...(etablissementId ? { etablissement_id: etablissementId } : {}),
-            ...(includeNominatif ? { include_nominatif: true } : {}),
-        },
+    return efInvoke<ExportResultatsData>('export-results', {
+        examen_id: examenId,
+        ...(etablissementId ? { etablissement_id: etablissementId } : {}),
+        ...(includeNominatif ? { include_nominatif: true } : {}),
     });
-
-    if (error) throw error;
-    return data as ExportResultatsData;
 }
 

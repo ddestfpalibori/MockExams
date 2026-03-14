@@ -120,7 +120,7 @@ export default function ConsultationPage() {
                     </div>
                     <div>
                         <h1 className="font-bold">Consultation des résultats</h1>
-                        <p className="text-xs text-secondary">DDEST-FP Alibori</p>
+                        <p className="text-xs text-secondary">DDESTFP Alibori</p>
                     </div>
                 </div>
             </header>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAnalytics } from '@/hooks/queries/useAnalytics';
 import { useExamens } from '@/hooks/queries/useExamens';
+import { Select } from '@/components/ui/FormField';
 import { computeRemediations } from '@/services/analyticsService';
 import { GlobalKpis } from '@/components/analytics/GlobalKpis';
 import { DistributionChart } from '@/components/analytics/DistributionChart';
@@ -267,13 +268,13 @@ export default function AnalyticsPage() {
                     {examensLoading ? (
                         <div className="h-10 w-64 bg-gray-100 animate-pulse rounded-lg" />
                     ) : (
-                        <select
+                        <Select
                             value={selectedExamenId}
                             onChange={(e) => {
                                 setSelectedExamenId(e.target.value);
                                 setActiveTab('global');
                             }}
-                            className="h-10 px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-[260px]"
+                            className="min-w-[260px] md:w-80"
                         >
                             <option value="">— Sélectionner un examen —</option>
                             {examensAnalysables.map((e) => (
@@ -281,7 +282,7 @@ export default function AnalyticsPage() {
                                     {e.libelle} ({e.annee})
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     )}
                 </div>
             </div>

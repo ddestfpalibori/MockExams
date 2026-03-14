@@ -4,6 +4,7 @@ import { QUERY_KEYS } from '@/lib/constants/queryKeys';
 import { CACHE_STRATEGY } from '@/lib/constants/cacheStrategy';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { getAuthHeader } from '@/lib/efInvoke';
 
 /**
  * Hooks pour le module Chef Établissement (M05)
@@ -45,11 +46,12 @@ export function useImportPreview() {
             formData.append('etablissement_id', params.etablissementId);
             formData.append('mode', 'preview');
 
+            const authHeader = await getAuthHeader();
             const { data, error } = await supabase.functions.invoke<{
                 nb_valides: number;
                 nb_erreurs: number;
                 warnings: string[];
-            }>('verify-import', { body: formData });
+            }>('verify-import', { body: formData, headers: authHeader });
 
             if (error) throw error;
             return data;
@@ -71,11 +73,12 @@ export function useImportCandidats() {
             formData.append('import_legal_confirmed', 'true');
             formData.append('idempotency_key', params.idempotencyKey);
 
+            const authHeader = await getAuthHeader();
             const { data, error } = await supabase.functions.invoke<{
                 nb_succes: number;
                 nb_erreurs: number;
                 rapport: string[];
-            }>('verify-import', { body: formData });
+            }>('verify-import', { body: formData, headers: authHeader });
 
             if (error) throw error;
             return data;

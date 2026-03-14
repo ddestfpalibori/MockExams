@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/lib/constants/queryKeys';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/FormField';
 import { LotStatusBadge } from '@/components/ui/StatusBadge';
 import { Upload, CheckCircle, AlertCircle, Wifi } from 'lucide-react';
 import { toast } from 'sonner';
@@ -142,8 +143,8 @@ export default function SaisieNotesPage() {
                     <label className="block text-sm font-medium text-primary mb-1">
                         Examen
                     </label>
-                    <select
-                        className="h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    <Select
+                        className="lg:max-w-md"
                         value={examenId}
                         onChange={(e) => {
                             setExamenId(e.target.value);
@@ -160,7 +161,7 @@ export default function SaisieNotesPage() {
                                     {ex.code} — {ex.libelle} ({ex.annee})
                                 </option>
                             ))}
-                    </select>
+                    </Select>
                 </div>
 
                 {/* Sélection lot */}

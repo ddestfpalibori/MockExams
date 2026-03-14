@@ -4,6 +4,7 @@ import { useExamens } from '@/hooks/queries/useExamens';
 import { useGenererAnonymats } from '@/hooks/queries/useLots';
 import { centreService } from '@/services/centres';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/FormField';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EntitySelector } from '@/components/ui/EntitySelector';
@@ -84,8 +85,8 @@ export default function AnonymatsPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                         Examen
                     </label>
-                    <select
-                        className="h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                    <Select
+                        className="max-w-md"
                         value={examenId}
                         onChange={(e) => {
                             setExamenId(e.target.value);
@@ -99,7 +100,7 @@ export default function AnonymatsPage() {
                                 {ex.code} — {ex.libelle} ({ex.annee})
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
 
                 {examenSelectionne && (

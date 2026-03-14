@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { efInvoke } from '@/lib/efInvoke';
 import type { ProfileRow, UserRole, CentreRow, EtablissementRow } from '@/types/domain';
 
 export interface UserAssignments {
@@ -46,22 +47,12 @@ export const profileService = {
         prenom: string;
         telephone?: string;
     }) {
-        const { data, error } = await supabase.functions.invoke('manage-users', {
-            body: { action: 'create', ...payload },
-        });
-
-        if (error) throw error;
-        return data;
+        return efInvoke('manage-users', { action: 'create', ...payload });
     },
 
     /** Réinitialise le mot de passe d'un utilisateur via Edge Function (Admin uniquement) */
     async resetPassword(userId: string, newPassword: string) {
-        const { data, error } = await supabase.functions.invoke('manage-users', {
-            body: { action: 'update', user_id: userId, password: newPassword },
-        });
-
-        if (error) throw error;
-        return data;
+        return efInvoke('manage-users', { action: 'update', user_id: userId, password: newPassword });
     },
 
     /**
@@ -69,12 +60,7 @@ export const profileService = {
      * (Supabase Auth ne permet pas de désactiver directement depuis le client)
      */
     async disableUser(userId: string) {
-        const { data, error } = await supabase.functions.invoke('manage-users', {
-            body: { action: 'disable', user_id: userId },
-        });
-
-        if (error) throw error;
-        return data;
+        return efInvoke('manage-users', { action: 'disable', user_id: userId });
     },
 
     /** Récupère les centres et établissements affectés à un utilisateur */

@@ -56,10 +56,10 @@ export function FormField({ label, error, required, hint, children, className }:
 }
 
 /** Styles partagés pour les inputs utilisés avec FormField */
-export const inputClassName = "w-full h-10 px-3 text-sm rounded-md border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary placeholder:text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+export const inputClassName = "w-full max-w-full h-10 px-3 text-sm rounded-md border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:border-brand-primary placeholder:text-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** Styles partagés pour les selects utilisés avec FormField */
-export const selectClassName = "w-full h-10 px-3 text-sm rounded-md border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
+export const selectClassName = "w-full min-w-0 max-w-full h-10 pl-3 pr-10 text-xs sm:text-sm rounded-md border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden text-ellipsis";
 
 /** Input stylisé prêt à l'emploi avec FormField */
 export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {

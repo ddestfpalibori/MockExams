@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { efInvoke } from '@/lib/efInvoke';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -101,11 +101,7 @@ export interface AnalyticsData {
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
 export async function fetchAnalytics(examenId: string): Promise<AnalyticsData> {
-    const { data, error } = await supabase.functions.invoke('get-analytics', {
-        body: { examen_id: examenId },
-    });
-    if (error) throw error;
-    return data as AnalyticsData;
+    return efInvoke<AnalyticsData>('get-analytics', { examen_id: examenId });
 }
 
 // ── Moteur de Remédiation ─────────────────────────────────────────────────────

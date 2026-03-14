@@ -5,6 +5,7 @@ import { useResultats } from '@/hooks/queries/useResultats';
 import { useAuth } from '@/hooks/useAuth';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
+import { Select } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
 import { ResultatStatusBadge } from '@/components/ui/StatusBadge';
 import { ExportModal } from '@/components/ExportModal';
@@ -96,9 +97,9 @@ export default function ResultatsPage() {
                 </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <select
-                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary sm:w-72"
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <Select
+                    className="lg:w-96"
                     value={examenId}
                     onChange={(e) => {
                         setExamenId(e.target.value);
@@ -117,10 +118,10 @@ export default function ResultatsPage() {
                                 {ex.code} — {ex.libelle} ({ex.annee})
                             </option>
                         ))}
-                </select>
+                </Select>
 
-                <select
-                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                <Select
+                    className="lg:w-48"
                     value={statusFilter}
                     onChange={(e) => {
                         setStatusFilter(e.target.value as ResultatStatus | '');
@@ -131,10 +132,10 @@ export default function ResultatsPage() {
                     {STATUS_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
                     ))}
-                </select>
+                </Select>
 
                 {total > 0 && (
-                    <span className="text-sm text-slate-500">
+                    <span className="text-sm text-slate-500 lg:ml-2">
                         {total.toLocaleString('fr-FR')} résultats
                     </span>
                 )}

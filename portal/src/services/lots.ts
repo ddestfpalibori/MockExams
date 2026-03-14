@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { efInvoke } from '@/lib/efInvoke';
 import type { LotRow } from '@/types/domain';
 
 export interface LotWithDetails extends LotRow {
@@ -75,20 +76,12 @@ export const lotService = {
 
     /** Signe un lot via Edge Function sign-lot (génère une signature) */
     async signerLot(lotId: string): Promise<void> {
-        const { error } = await supabase.functions.invoke('sign-lot', {
-            body: { lot_id: lotId },
-        });
-
-        if (error) throw error;
+        await efInvoke('sign-lot', { lot_id: lotId });
     },
 
     /** Réinitialise la signature d'un lot (admin only) */
     async resetLotHmac(lotId: string): Promise<void> {
-        const { error } = await supabase.functions.invoke('reset-lot-hmac', {
-            body: { lot_id: lotId },
-        });
-
-        if (error) throw error;
+        await efInvoke('reset-lot-hmac', { lot_id: lotId });
     },
 
     /** Récupère les numéros anonymes des candidats d'un lot (pour export Excel) */
@@ -139,17 +132,12 @@ export const lotService = {
         lines: { numero_anonyme: string; status: string; errors: string[] }[];
         warnings: string[];
     }> {
-        const { data, error } = await supabase.functions.invoke('verify-import', {
-            body: { meta, rows },
-        });
-
-        if (error) throw error;
-        return data as {
+        return efInvoke<{
             success: boolean;
             nb_success: number;
             nb_errors: number;
             lines: { numero_anonyme: string; status: string; errors: string[] }[];
             warnings: string[];
-        };
+        }>('verify-import', { meta, rows });
     },
 };

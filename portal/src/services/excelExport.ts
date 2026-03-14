@@ -138,13 +138,14 @@ export function generateExcelModelA(data: ExportResultatsData): Uint8Array {
     return XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as Uint8Array;
 }
 
-// ── Téléchargement ────────────────────────────────────────────────────────────
-
+/**
+ * Téléchargement du fichier Excel des résultats.
+ */
 export function downloadExcelResultats(
     data: Uint8Array,
     examenCode: string,
-    modele: 'A' | 'B',
+    type: 'anonyme' | 'nominal',
 ): void {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    downloadExcel(data, `resultats_${examenCode}_modele${modele}_${date}.xlsx`);
+    downloadExcel(data, `resultats_${examenCode}_${type}_${date}.xlsx`);
 }

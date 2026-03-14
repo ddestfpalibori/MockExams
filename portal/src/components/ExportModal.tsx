@@ -47,15 +47,14 @@ export function ExportModal({
             switch (type) {
                 case 'excel_a': {
                     const buffer = generateExcelModelA(data);
-                    downloadExcelResultats(buffer, examenCode, 'A');
+                    downloadExcelResultats(buffer, examenCode, 'anonyme');
                     break;
                 }
                 case 'excel_b': {
                     const buffer = generateExcelModelB(data);
-                    downloadExcelResultats(buffer, examenCode, 'B');
+                    downloadExcelResultats(buffer, examenCode, 'nominal');
                     break;
-                }
-                case 'pdf_a':
+                } case 'pdf_a':
                     printPvDeliberationAnonyme(data);
                     break;
                 case 'pdf_b':
@@ -82,14 +81,14 @@ export function ExportModal({
             <div className="space-y-3">
                 {canSeeNominatif && (
                     <div className="rounded-md bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
-                        Par défaut : Modèle B (nominatif). Le Modèle A reste optionnel.
+                        Par défaut : Groupage Nominal. Le Groupage Anonyme reste optionnel.
                     </div>
                 )}
                 {/* Excel Modèle B — nominatif (admin + chef_etablissement) */}
                 {canSeeNominatif && (
                     <ExportOption
                         icon={<FileSpreadsheet size={20} className="text-blue-600" />}
-                        label="Excel — Modèle B (nominatif)"
+                        label="Excel — Groupage Nominal"
                         description="Nom, prénom, notes par discipline, moyenne, décision."
                         onClick={() => handleExport('excel_b')}
                         loading={loading === 'excel_b'}
@@ -100,18 +99,18 @@ export function ExportModal({
                 {/* Excel Modèle A */}
                 <ExportOption
                     icon={<FileSpreadsheet size={20} className="text-emerald-600" />}
-                    label="Excel — Modèle A (anonyme)"
+                    label="Excel — Groupage Anonyme"
                     description="N° anonyme, notes par discipline, moyenne, décision. Une feuille par établissement."
                     onClick={() => handleExport('excel_a')}
                     loading={loading === 'excel_a'}
                     disabled={loading !== null}
                 />
 
-                {/* PDF PV Modèle B — nominatif (admin + chef_etablissement) */}
+                {/* PDF PV Nominatif */}
                 {canSeeNominatif && (
                     <ExportOption
                         icon={<FileText size={20} className="text-purple-600" />}
-                        label="PDF — PV nominatif"
+                        label="PDF — PV de délibération (nominatif)"
                         description="PV avec noms et prénoms des candidats."
                         onClick={() => handleExport('pdf_b')}
                         loading={loading === 'pdf_b'}
@@ -123,7 +122,7 @@ export function ExportModal({
                 <ExportOption
                     icon={<FileText size={20} className="text-red-600" />}
                     label="PDF — PV de délibération (anonyme)"
-                    description="Document officiel avec entête DDEST-FP, résultats par établissement."
+                    description="Document officiel avec entête DDESTFP, résultats par établissement."
                     onClick={() => handleExport('pdf_a')}
                     loading={loading === 'pdf_a'}
                     disabled={loading !== null}

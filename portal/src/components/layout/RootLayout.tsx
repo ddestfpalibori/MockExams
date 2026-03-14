@@ -91,7 +91,7 @@ export const RootLayout = () => {
                         title: 'Résultats',
                         icon: TrendingUp,
                         items: [
-                            { label: 'Résultats', path: '/tutelle/resultats' },
+                            { label: 'Consultation', path: '/tutelle/resultats' },
                             { label: 'Analyses', path: '/admin/analytics' },
                         ]
                     }
@@ -124,7 +124,7 @@ export const RootLayout = () => {
                         title: 'Résultats',
                         icon: TrendingUp,
                         items: [
-                            { label: 'Résultats', path: '/centre/resultats' },
+                            { label: 'Consultation', path: '/centre/resultats' },
                             { label: 'Analyses', path: '/centre/analytics' },
                         ]
                     }
@@ -148,7 +148,7 @@ export const RootLayout = () => {
                         title: 'Résultats',
                         icon: TrendingUp,
                         items: [
-                            { label: 'Résultats', path: '/etablissement/resultats' },
+                            { label: 'Consultation', path: '/etablissement/resultats' },
                             { label: 'Analyses', path: '/etablissement/analytics' },
                         ]
                     }
@@ -164,7 +164,7 @@ export const RootLayout = () => {
                         title: 'Résultats',
                         icon: TrendingUp,
                         items: [
-                            { label: 'Résultats', path: '/tutelle/resultats' },
+                            { label: 'Consultation', path: '/tutelle/resultats' },
                             { label: 'Analyses', path: '/tutelle/analytics' },
                         ]
                     }

@@ -19,12 +19,12 @@ export function EntitySelector({ entities, activeId, onSelect, label }: EntitySe
     if (entities.length <= 1) return null;
 
     return (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
-            <span className="text-sm font-medium text-amber-800">{label} :</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+            <span className="text-sm font-medium text-amber-800 flex-shrink-0">{label} :</span>
             <select
                 value={activeId}
                 onChange={(e) => onSelect(e.target.value)}
-                className="h-8 rounded border border-amber-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                className="h-8 min-w-0 max-w-full flex-1 rounded border border-amber-300 bg-white pl-2 pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
             >
                 {entities.map((e) => (
                     <option key={e.id} value={e.id}>

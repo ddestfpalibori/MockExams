@@ -3,6 +3,7 @@ import { useActiveCentre } from '@/hooks/useActiveCentre';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { useLots, useSignerLot, useResetLotHmac } from '@/hooks/queries/useLots';
 import { useAuth } from '@/hooks/useAuth';
+import { Select } from '@/components/ui/FormField';
 import { EntitySelector } from '@/components/ui/EntitySelector';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
@@ -173,20 +174,22 @@ export default function LotsPage() {
                 />
             )}
 
-            <div className="flex items-center gap-3">
-                <label className="text-sm font-medium text-slate-700">Examen :</label>
-                <select
-                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-72"
-                    value={examenId}
-                    onChange={(e) => setExamenId(e.target.value)}
-                >
-                    <option value="">Sélectionner un examen...</option>
-                    {(examens ?? []).map((ex: ExamenRow) => (
-                        <option key={ex.id} value={ex.id}>
-                            {ex.code} — {ex.libelle} ({ex.annee})
-                        </option>
-                    ))}
-                </select>
+            <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-slate-700">Examen</label>
+                    <Select
+                        className="sm:w-96"
+                        value={examenId}
+                        onChange={(e) => setExamenId(e.target.value)}
+                    >
+                        <option value="">Sélectionner un examen...</option>
+                        {(examens ?? []).map((ex: ExamenRow) => (
+                            <option key={ex.id} value={ex.id}>
+                                {ex.code} — {ex.libelle} ({ex.annee})
+                            </option>
+                        ))}
+                    </Select>
+                </div>
             </div>
 
             {examenId && (

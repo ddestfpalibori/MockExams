@@ -3,6 +3,7 @@ import { useExamens } from '@/hooks/queries/useExamens';
 import { useImportPreview, useImportCandidats } from '@/hooks/queries/useEtablissements';
 import { useActiveEtablissement } from '@/hooks/useActiveEtablissement';
 import { EntitySelector } from '@/components/ui/EntitySelector';
+import { Select } from '@/components/ui/FormField';
 import { Button } from '@/components/ui/Button';
 import { Upload, CheckCircle, AlertCircle, FileText, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -90,7 +91,7 @@ export default function ImportPage() {
                     Importer des candidats
                 </h1>
                 <p className="text-slate-500">
-                    Importez la liste des candidats via fichier Excel (format DDEST-FP).
+                    Importez la liste des candidats via fichier Excel (format DDESTFP).
                 </p>
             </div>
 
@@ -146,8 +147,8 @@ export default function ImportPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                             Examen cible
                         </label>
-                        <select
-                            className="h-10 w-full max-w-sm rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                        <Select
+                            className="max-w-sm"
                             value={examenId}
                             onChange={(e) => setExamenId(e.target.value)}
                         >
@@ -157,7 +158,7 @@ export default function ImportPage() {
                                     {ex.code} — {ex.libelle} ({ex.annee})
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                         {examensInscriptions.length === 0 && (
                             <p className="mt-1 text-xs text-slate-400">
                                 Aucun examen en phase Inscriptions disponible.
@@ -300,7 +301,7 @@ export default function ImportPage() {
                             <h3 className="font-semibold text-amber-900">Confirmation légale requise</h3>
                             <p className="text-sm text-amber-800">
                                 En soumettant ce fichier, vous certifiez que les données sont exactes,
-                                complètes et conformes aux instructions de la DDEST-FP Alibori.
+                                complètes et conformes aux instructions de la DDESTFP Alibori.
                                 Cette action est irréversible sans intervention administrative.
                             </p>
                             <label className="flex items-start gap-3 cursor-pointer">

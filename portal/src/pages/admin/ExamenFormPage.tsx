@@ -520,7 +520,7 @@ export default function ExamenFormPage() {
                                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                                     Paramètres d'organisation
                                 </p>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <FormField label="Capacité salle référence" required error={errors.taille_salle_ref?.message}
                                         hint="Nb de places par salle type">
                                         <Input
@@ -545,11 +545,11 @@ export default function ExamenFormPage() {
                                     hint="Définit comment les copies sont regroupées par lot"
                                 >
                                     <Select {...register('distribution_model')}>
-                                        <option value="A">Modèle A — Anonyme par lot (pas d’établissement)</option>
-                                        <option value="B">Modèle B — Nominatif par établissement</option>
+                                        <option value="A">Groupage Anonyme (par n° anonymat)</option>
+                                        <option value="B">Groupage Nominal (par nom)</option>
                                     </Select>
                                 </FormField>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <FormField label="Début de composition">
                                         <Input type="date" {...register('date_composition_debut')} />
                                     </FormField>

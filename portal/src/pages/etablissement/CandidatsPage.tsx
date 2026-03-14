@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useCandidats } from '@/hooks/queries/useCandidats';
 import { useExamens } from '@/hooks/queries/useExamens';
 import { DataTable, type Column } from '@/components/ui/DataTable';
+import { Select } from '@/components/ui/FormField';
 import { Pagination } from '@/components/ui/Pagination';
 import { SearchInput } from '@/components/ui/SearchInput';
 import type { CandidatRow, ExamenRow } from '@/types/domain';
@@ -67,8 +68,8 @@ export default function CandidatsPage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <select
-                    className="h-10 rounded-md border border-border bg-surface px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary sm:w-64"
+                <Select
+                    className="sm:w-64"
                     value={examenId}
                     onChange={(e) => {
                         setExamenId(e.target.value);
@@ -81,7 +82,7 @@ export default function CandidatsPage() {
                             {ex.code} — {ex.libelle} ({ex.annee})
                         </option>
                     ))}
-                </select>
+                </Select>
 
                 <SearchInput
                     placeholder="Filtrer par n° anonyme..."

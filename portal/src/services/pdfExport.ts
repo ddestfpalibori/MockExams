@@ -174,7 +174,7 @@ function buildPvHtml(
  * L'utilisateur peut "Enregistrer en PDF" via le dialogue d'impression du navigateur.
  */
 export function printPvDeliberationAnonyme(data: ExportResultatsData): void {
-    const html = buildPvHtml(data, false, 'Procès-Verbal de Délibération');
+    const html = buildPvHtml(data, false, 'Procès-Verbal de Délibération (Anonyme)');
     openPrintWindow(html);
 }
 
@@ -183,7 +183,7 @@ export function printPvDeliberationAnonyme(data: ExportResultatsData): void {
  * Accessible admin uniquement.
  */
 export function printPvDeliberationNominatif(data: ExportResultatsData): void {
-    const html = buildPvHtml(data, true, 'Procès-Verbal de Délibération — Liste Nominative');
+    const html = buildPvHtml(data, true, 'Procès-Verbal de Délibération (Nominatif)');
     openPrintWindow(html);
 }
 
