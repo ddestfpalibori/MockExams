@@ -21,6 +21,7 @@ export const RootLayout = () => {
                     { label: 'Examens', path: '/admin/examens' },
                     { label: 'Utilisateurs', path: '/admin/utilisateurs' },
                     { label: 'Résultats', path: '/tutelle/resultats' },
+                    { label: 'Analyses', path: '/admin/analytics' },
                     { label: 'Salles', path: '/centre/salles' },
                     { label: 'Affectation', path: '/centre/affectation' },
                     { label: 'Anonymats', path: '/centre/anonymats' },
@@ -48,6 +49,7 @@ export const RootLayout = () => {
                 return [
                     { label: 'Dashboard', path: '/tutelle' },
                     { label: 'Résultats', path: '/tutelle/resultats' },
+                    { label: 'Analyses', path: '/tutelle/analytics' },
                 ];
             default:
                 return [];

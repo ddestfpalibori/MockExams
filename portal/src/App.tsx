@@ -38,6 +38,9 @@ const ImportPage = lazy(() => import('./pages/etablissement/ImportPage'));
 const TutelleDashboard = lazy(() => import('./pages/tutelle/TutelleDashboard'));
 const ResultatsPage = lazy(() => import('./pages/tutelle/ResultatsPage'));
 
+// Analytics (admin + tutelle)
+const AnalyticsPage = lazy(() => import('./pages/admin/AnalyticsPage'));
+
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
 const LoadingFallback = () => (
@@ -131,6 +134,7 @@ function App() {
                                                 <Route path="examens/:id/edit" element={<ExamenFormPage />} />
                                                 <Route path="examens/:id" element={<ExamenDetailPage />} />
                                                 <Route path="utilisateurs" element={<UtilisateursPage />} />
+                                                <Route path="analytics" element={<AnalyticsPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
@@ -187,6 +191,7 @@ function App() {
                                             <Routes>
                                                 <Route index element={<TutelleDashboard />} />
                                                 <Route path="resultats" element={<ResultatsPage />} />
+                                                <Route path="analytics" element={<AnalyticsPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>

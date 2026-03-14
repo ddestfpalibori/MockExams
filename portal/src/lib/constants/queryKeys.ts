@@ -50,4 +50,8 @@ export const QUERY_KEYS = {
     series: {
         all: ['series'] as const,
     },
+    analytics: {
+        all: ['analytics'] as const,
+        examen: (id: string) => ['analytics', 'examen', id] as const,
+    },
 } as const;
