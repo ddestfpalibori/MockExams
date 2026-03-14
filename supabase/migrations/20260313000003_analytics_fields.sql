@@ -47,32 +47,42 @@ BEGIN
       USING ERRCODE = 'P0002';
   END IF;
 
-  -- ── Stats globales ────────────────────────────────────────────────────────
-  -- Résultat final = dernière phase par candidat (phase 2 si rattrapage effectué)
-  WITH final_r AS (
+  -- ── Matérialisation du résultat final par candidat ────────────────────────
+  -- Évite de scanner la table resultats 6 fois (global, distribution, séries,
+  -- sexe, établissements, centres, milieux). Résultat final = dernière phase.
+  CREATE TEMP TABLE _final_r ON COMMIT DROP AS
     SELECT DISTINCT ON (r.candidat_id)
       r.candidat_id,
       r.moyenne_centimes,
-      r.status,
-      r.phase
+      r.status
     FROM resultats r
     WHERE r.examen_id = p_examen_id
-    ORDER BY r.candidat_id, r.phase DESC
-  ),
-  phase1_r AS (
-    SELECT status FROM resultats
-    WHERE examen_id = p_examen_id AND phase = 1
-  )
+    ORDER BY r.candidat_id, r.phase DESC;
+
+  CREATE INDEX ON _final_r (candidat_id);
+  ANALYZE _final_r;
+
+  -- phase1_r : candidats orientés rattrapage avant éventuels rattrapages
+  CREATE TEMP TABLE _phase1_r ON COMMIT DROP AS
+    SELECT candidat_id, status
+    FROM resultats
+    WHERE examen_id = p_examen_id AND phase = 1;
+
+  CREATE INDEX ON _phase1_r (candidat_id);
+  ANALYZE _phase1_r;
+
+  -- ── Stats globales ────────────────────────────────────────────────────────
+  WITH phase1_r AS (SELECT status FROM _phase1_r)
   SELECT jsonb_build_object(
     'total',               COUNT(*),
     'admis',               COUNT(*) FILTER (WHERE fr.status = 'ADMIS'),
-    'rattrapage_initial',  (SELECT COUNT(*) FROM phase1_r WHERE status = 'RATTRAPAGE'),
+    'rattrapage_initial',  (SELECT COUNT(*) FROM _phase1_r WHERE status = 'RATTRAPAGE'),
     'non_admis',           COUNT(*) FILTER (WHERE fr.status = 'NON_ADMIS'),
     'taux_reussite',       CASE WHEN COUNT(*) > 0
                              THEN ROUND(100.0 * COUNT(*) FILTER (WHERE fr.status = 'ADMIS') / COUNT(*), 1)
                              ELSE 0 END,
     'taux_rattrapage',     CASE WHEN COUNT(*) > 0
-                             THEN ROUND(100.0 * (SELECT COUNT(*) FROM phase1_r WHERE status = 'RATTRAPAGE') / COUNT(*), 1)
+                             THEN ROUND(100.0 * (SELECT COUNT(*) FROM _phase1_r WHERE status = 'RATTRAPAGE') / COUNT(*), 1)
                              ELSE 0 END,
     'moyenne',             ROUND(AVG(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2),
     'mediane',             ROUND((PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL))::numeric / 100, 2),
@@ -80,24 +90,18 @@ BEGIN
     'note_min',            ROUND(MIN(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2),
     'note_max',            ROUND(MAX(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2)
   ) INTO v_global
-  FROM final_r fr;
+  FROM _final_r fr;
 
   -- ── Distribution des moyennes (buckets de 1 point : 0→1, ..., 19→20 inclus) ─
   -- Note : bucket_centimes = 0..2000. Le frontend gère 21 tranches (0–1 à 20/20).
-  WITH final_r AS (
-    SELECT DISTINCT ON (candidat_id)
-      moyenne_centimes
-    FROM resultats
-    WHERE examen_id = p_examen_id AND moyenne_centimes IS NOT NULL
-    ORDER BY candidat_id, phase DESC
-  )
   SELECT COALESCE(jsonb_agg(row ORDER BY bucket_centimes), '[]'::jsonb)
   INTO v_distribution
   FROM (
     SELECT
       (FLOOR(moyenne_centimes / 100.0) * 100)::int AS bucket_centimes,
       COUNT(*)::int                                 AS count
-    FROM final_r
+    FROM _final_r
+    WHERE moyenne_centimes IS NOT NULL
     GROUP BY bucket_centimes
   ) row;
 
@@ -138,18 +142,6 @@ BEGIN
   -- ── Par série ──────────────────────────────────────────────────────────────
   -- rattrapage = candidats ayant été orientés rattrapage en phase 1
   -- (cohérent avec rattrapage_initial du global, ≠ statut final)
-  WITH final_r AS (
-    SELECT DISTINCT ON (r.candidat_id)
-      r.candidat_id, r.moyenne_centimes, r.status
-    FROM resultats r
-    WHERE r.examen_id = p_examen_id
-    ORDER BY r.candidat_id, r.phase DESC
-  ),
-  phase1_r AS (
-    SELECT candidat_id, status
-    FROM resultats
-    WHERE examen_id = p_examen_id AND phase = 1
-  )
   SELECT COALESCE(jsonb_agg(s_row ORDER BY (s_row->>'taux_reussite')::numeric DESC), '[]'::jsonb)
   INTO v_series
   FROM (
@@ -166,24 +158,17 @@ BEGIN
                          ELSE 0 END,
       'moyenne',       ROUND(AVG(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2)
     ) AS s_row
-    FROM final_r fr
-    JOIN candidats c   ON c.id = fr.candidat_id
-    JOIN series s      ON s.id = c.serie_id
-    LEFT JOIN phase1_r p1 ON p1.candidat_id = fr.candidat_id
+    FROM _final_r fr
+    JOIN candidats c      ON c.id = fr.candidat_id
+    JOIN series s         ON s.id = c.serie_id
+    LEFT JOIN _phase1_r p1 ON p1.candidat_id = fr.candidat_id
     GROUP BY s.id, s.code, s.libelle
   ) sub;
 
   -- ── Par sexe ───────────────────────────────────────────────────────────────
   -- CTE intermédiaire pour éviter l'imbrication d'aggregates (jsonb_object_agg
   -- ne peut pas contenir COUNT/AVG directement — erreur PostgreSQL runtime).
-  WITH final_r AS (
-    SELECT DISTINCT ON (r.candidat_id)
-      r.candidat_id, r.moyenne_centimes, r.status
-    FROM resultats r
-    WHERE r.examen_id = p_examen_id
-    ORDER BY r.candidat_id, r.phase DESC
-  ),
-  stats_sexe AS (
+  WITH stats_sexe AS (
     SELECT
       c.sexe,
       COUNT(*)                                                   AS total,
@@ -193,7 +178,7 @@ BEGIN
         ELSE 0
       END                                                        AS taux_reussite,
       ROUND(AVG(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2) AS moyenne
-    FROM final_r fr
+    FROM _final_r fr
     JOIN candidats c ON c.id = fr.candidat_id
     WHERE c.sexe IN ('M', 'F')
     GROUP BY c.sexe
@@ -213,13 +198,6 @@ BEGIN
   FROM stats_sexe;
 
   -- ── Par établissement ──────────────────────────────────────────────────────
-  WITH final_r AS (
-    SELECT DISTINCT ON (r.candidat_id)
-      r.candidat_id, r.moyenne_centimes, r.status
-    FROM resultats r
-    WHERE r.examen_id = p_examen_id
-    ORDER BY r.candidat_id, r.phase DESC
-  )
   SELECT COALESCE(jsonb_agg(e_row ORDER BY (e_row->>'taux_reussite')::numeric DESC), '[]'::jsonb)
   INTO v_etabs
   FROM (
@@ -235,20 +213,13 @@ BEGIN
                             ELSE 0 END,
       'moyenne',          ROUND(AVG(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2)
     ) AS e_row
-    FROM final_r fr
+    FROM _final_r fr
     JOIN candidats c      ON c.id = fr.candidat_id
     JOIN etablissements e ON e.id = c.etablissement_id
     GROUP BY e.id, e.nom, e.ville, e.type_milieu
   ) sub;
 
   -- ── Par centre ─────────────────────────────────────────────────────────────
-  WITH final_r AS (
-    SELECT DISTINCT ON (r.candidat_id)
-      r.candidat_id, r.moyenne_centimes, r.status
-    FROM resultats r
-    WHERE r.examen_id = p_examen_id
-    ORDER BY r.candidat_id, r.phase DESC
-  )
   SELECT COALESCE(jsonb_agg(c_row ORDER BY (c_row->>'taux_reussite')::numeric DESC), '[]'::jsonb)
   INTO v_centres
   FROM (
@@ -263,7 +234,7 @@ BEGIN
                          ELSE 0 END,
       'moyenne',       ROUND(AVG(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2)
     ) AS c_row
-    FROM final_r fr
+    FROM _final_r fr
     JOIN candidats c ON c.id = fr.candidat_id
     JOIN centres ce  ON ce.id = c.centre_id
     WHERE c.centre_id IS NOT NULL
@@ -271,13 +242,6 @@ BEGIN
   ) sub;
 
   -- ── Par milieu (si données disponibles) ───────────────────────────────────
-  WITH final_r AS (
-    SELECT DISTINCT ON (r.candidat_id)
-      r.candidat_id, r.moyenne_centimes, r.status
-    FROM resultats r
-    WHERE r.examen_id = p_examen_id
-    ORDER BY r.candidat_id, r.phase DESC
-  )
   SELECT COALESCE(jsonb_agg(m_row ORDER BY (m_row->>'taux_reussite')::numeric DESC), '[]'::jsonb)
   INTO v_milieux
   FROM (
@@ -290,7 +254,7 @@ BEGIN
                          ELSE 0 END,
       'moyenne',       ROUND(AVG(fr.moyenne_centimes) FILTER (WHERE fr.moyenne_centimes IS NOT NULL)::numeric / 100, 2)
     ) AS m_row
-    FROM final_r fr
+    FROM _final_r fr
     JOIN candidats c      ON c.id = fr.candidat_id
     JOIN etablissements e ON e.id = c.etablissement_id
     GROUP BY e.type_milieu

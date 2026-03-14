@@ -211,11 +211,13 @@ export function computeRemediations(data: AnalyticsData): RemediationSuggestion[
 
     // ── R4 : Écart de taux de réussite entre séries > 20 pts ────────────────
     if (data.par_serie.length >= 2) {
-        const tauxSeries = data.par_serie.map((s) => s.taux_reussite);
+        // Tri défensif côté client — ne pas supposer l'ordre retourné par le backend
+        const sortedSeries = [...data.par_serie].sort((a, b) => b.taux_reussite - a.taux_reussite);
+        const tauxSeries = sortedSeries.map((s) => s.taux_reussite);
         const ecartSeries = Math.max(...tauxSeries) - Math.min(...tauxSeries);
         if (ecartSeries > 20) {
-            const meilleures = data.par_serie[0];
-            const faibles = data.par_serie[data.par_serie.length - 1];
+            const meilleures = sortedSeries[0];
+            const faibles = sortedSeries[sortedSeries.length - 1];
             suggestions.push({
                 id: 'r4-ecart-series',
                 severity: ecartSeries > 40 ? 'critique' : 'attention',
