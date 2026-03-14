@@ -3,10 +3,8 @@ import {
     ArrowLeft,
     LogOut,
     Settings,
-    UserPlus,
     Building2,
     ClipboardList,
-    PieChart,
     Home,
     Users,
     TrendingUp,
@@ -51,6 +49,11 @@ export const RootLayout = () => {
             case 'admin':
                 return [
                     {
+                        title: 'Accueil',
+                        icon: Home,
+                        items: [{ label: 'Dashboard', path: '/admin' }]
+                    },
+                    {
                         title: 'Configuration',
                         icon: Settings,
                         items: [
@@ -60,10 +63,10 @@ export const RootLayout = () => {
                     },
                     {
                         title: 'Inscriptions',
-                        icon: UserPlus,
+                        icon: Users,
                         items: [
-                            { label: 'Candidats', path: '/etablissement/candidats' },
                             { label: 'Import', path: '/etablissement/import' },
+                            { label: 'Candidats', path: '/etablissement/candidats' },
                         ]
                     },
                     {
@@ -78,14 +81,15 @@ export const RootLayout = () => {
                         title: 'Secrétariat',
                         icon: ClipboardList,
                         items: [
-                            { label: 'Lots', path: '/centre/lots' },
                             { label: 'Anonymats', path: '/centre/anonymats' },
+                            { label: 'Groupage', path: '/centre/lots' },
                             { label: 'Saisie', path: '/centre/saisie' },
+                            { label: 'Délibération', path: '/admin/examens?status=DELIBERATION' },
                         ]
                     },
                     {
-                        title: 'Rapports',
-                        icon: PieChart,
+                        title: 'Résultats',
+                        icon: TrendingUp,
                         items: [
                             { label: 'Résultats', path: '/tutelle/resultats' },
                             { label: 'Analyses', path: '/admin/analytics' },
@@ -111,15 +115,16 @@ export const RootLayout = () => {
                         title: 'Secrétariat',
                         icon: ClipboardList,
                         items: [
-                            { label: 'Lots', path: '/centre/lots' },
                             { label: 'Anonymats', path: '/centre/anonymats' },
+                            { label: 'Groupage', path: '/centre/lots' },
                             { label: 'Saisie', path: '/centre/saisie' },
                         ]
                     },
                     {
-                        title: 'Pilotage',
+                        title: 'Résultats',
                         icon: TrendingUp,
                         items: [
+                            { label: 'Résultats', path: '/centre/resultats' },
                             { label: 'Analyses', path: '/centre/analytics' },
                         ]
                     }
@@ -132,17 +137,18 @@ export const RootLayout = () => {
                         items: [{ label: 'Dashboard', path: '/etablissement' }]
                     },
                     {
-                        title: 'Élèves',
+                        title: 'Inscriptions',
                         icon: Users,
                         items: [
-                            { label: 'Candidats', path: '/etablissement/candidats' },
                             { label: 'Import', path: '/etablissement/import' },
+                            { label: 'Candidats', path: '/etablissement/candidats' },
                         ]
                     },
                     {
-                        title: 'Pilotage',
+                        title: 'Résultats',
                         icon: TrendingUp,
                         items: [
+                            { label: 'Résultats', path: '/etablissement/resultats' },
                             { label: 'Analyses', path: '/etablissement/analytics' },
                         ]
                     }
@@ -155,7 +161,7 @@ export const RootLayout = () => {
                         items: [{ label: 'Dashboard', path: '/tutelle' }]
                     },
                     {
-                        title: 'Pilotage',
+                        title: 'Résultats',
                         icon: TrendingUp,
                         items: [
                             { label: 'Résultats', path: '/tutelle/resultats' },

@@ -28,7 +28,8 @@ export function ExportModal({
     const [loading, setLoading] = useState<ExportType | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const isAdmin = userRole === 'admin';
+    // Nominatif : admin (global) + chef_etablissement (leurs élèves, périmètre garanti côté EF)
+    const canSeeNominatif = userRole === 'admin' || userRole === 'chef_etablissement';
 
     const handleExport = useCallback(async (type: ExportType) => {
         setLoading(type);
@@ -79,17 +80,17 @@ export function ExportModal({
             description="Choisissez le format et le type d'export."
         >
             <div className="space-y-3">
-                {isAdmin && (
+                {canSeeNominatif && (
                     <div className="rounded-md bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
                         Par défaut : Modèle B (nominatif). Le Modèle A reste optionnel.
                     </div>
                 )}
-                {/* Excel Modèle B — admin uniquement (par défaut) */}
-                {isAdmin && (
+                {/* Excel Modèle B — nominatif (admin + chef_etablissement) */}
+                {canSeeNominatif && (
                     <ExportOption
                         icon={<FileSpreadsheet size={20} className="text-blue-600" />}
-                        label="Excel — Modèle B (nominatif, par défaut)"
-                        description="Nom, prénom, notes par discipline, moyenne, décision. Admin uniquement."
+                        label="Excel — Modèle B (nominatif)"
+                        description="Nom, prénom, notes par discipline, moyenne, décision."
                         onClick={() => handleExport('excel_b')}
                         loading={loading === 'excel_b'}
                         disabled={loading !== null}
@@ -100,29 +101,29 @@ export function ExportModal({
                 <ExportOption
                     icon={<FileSpreadsheet size={20} className="text-emerald-600" />}
                     label="Excel — Modèle A (anonyme)"
-                    description="Optionnel. N° anonyme, notes par discipline, moyenne, décision. Une feuille par établissement."
+                    description="N° anonyme, notes par discipline, moyenne, décision. Une feuille par établissement."
                     onClick={() => handleExport('excel_a')}
                     loading={loading === 'excel_a'}
                     disabled={loading !== null}
                 />
 
-                {/* PDF PV Modèle B — admin uniquement (par défaut) */}
-                {isAdmin && (
+                {/* PDF PV Modèle B — nominatif (admin + chef_etablissement) */}
+                {canSeeNominatif && (
                     <ExportOption
                         icon={<FileText size={20} className="text-purple-600" />}
-                        label="PDF — PV nominatif (par défaut)"
-                        description="PV avec noms et prénoms des candidats. Admin uniquement."
+                        label="PDF — PV nominatif"
+                        description="PV avec noms et prénoms des candidats."
                         onClick={() => handleExport('pdf_b')}
                         loading={loading === 'pdf_b'}
                         disabled={loading !== null}
                     />
                 )}
 
-                {/* PDF PV Modèle A */}
+                {/* PDF PV Modèle A — anonyme (tous rôles) */}
                 <ExportOption
                     icon={<FileText size={20} className="text-red-600" />}
                     label="PDF — PV de délibération (anonyme)"
-                    description="Optionnel. Document officiel avec entête DDEST-FP, résultats par établissement."
+                    description="Document officiel avec entête DDEST-FP, résultats par établissement."
                     onClick={() => handleExport('pdf_a')}
                     loading={loading === 'pdf_a'}
                     disabled={loading !== null}

@@ -2,7 +2,7 @@
  * Edge Function : export-results
  * M14 — Export des résultats de délibération
  *
- * Accès : admin (tous établissements) | chef_etablissement (son établissement)
+ * Accès : admin (tous) | tutelle (tous, anonyme) | chef_etablissement (son étab, nominatif) | chef_centre (son centre, anonyme)
  *
  * POST /functions/v1/export-results
  * Body : { examen_id: string, etablissement_id?: string }
@@ -116,18 +116,19 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { userId, role } = await requireAuth(req);
-    if (role !== 'admin' && role !== 'chef_etablissement' && role !== 'tutelle') {
+    if (role !== 'admin' && role !== 'chef_etablissement' && role !== 'tutelle' && role !== 'chef_centre') {
       return errJson({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
     }
 
     const input = validateRequest(await req.json());
     const supabase = createServiceClient();
 
-    // include_nominatif réservé à l'admin — ignoré pour les autres rôles
-    const includeNominatif = role === 'admin' && input.include_nominatif === true;
+    // include_nominatif : admin (global) + chef_etablissement (leurs élèves, périmètre RLS garanti)
+    const includeNominatif = (role === 'admin' || role === 'chef_etablissement') && input.include_nominatif === true;
 
-    // ── Vérifier accès établissement pour chef_etablissement ────────────────
+    // ── Périmètre d'accès selon le rôle ────────────────────────────────────
     let etablissementFilter: string | null = input.etablissement_id ?? null;
+    let centreIds: string[] | null = null;
 
     if (role === 'chef_etablissement') {
       const { data: userEtabs } = await supabase
@@ -137,12 +138,29 @@ Deno.serve(async (req: Request) => {
 
       const myEtabIds = (userEtabs ?? []).map((r: { etablissement_id: string }) => r.etablissement_id);
 
-      if (!etablissementFilter) {
-        // Chef établissement sans filtre = erreur
-        return errJson({ error: 'etablissement_id requis pour ce rôle', code: 'ETABLISSEMENT_REQUIRED' }, 400);
+      if (etablissementFilter) {
+        // Vérifier que l'établissement fourni appartient à l'utilisateur
+        if (!myEtabIds.includes(etablissementFilter)) {
+          return errJson({ error: 'Établissement non autorisé', code: 'FORBIDDEN' }, 403);
+        }
+      } else {
+        // Auto-résoudre : prendre le premier établissement assigné
+        if (myEtabIds.length === 0) {
+          return errJson({ error: 'Aucun établissement assigné', code: 'ETABLISSEMENT_REQUIRED' }, 400);
+        }
+        etablissementFilter = myEtabIds[0];
       }
-      if (!myEtabIds.includes(etablissementFilter)) {
-        return errJson({ error: 'Établissement non autorisé', code: 'FORBIDDEN' }, 403);
+    }
+
+    if (role === 'chef_centre') {
+      const { data: userCentres } = await supabase
+        .from('user_centres')
+        .select('centre_id')
+        .eq('user_id', userId);
+
+      centreIds = (userCentres ?? []).map((r: { centre_id: string }) => r.centre_id);
+      if (centreIds.length === 0) {
+        return errJson({ error: 'Aucun centre assigné', code: 'CENTRE_REQUIRED' }, 400);
       }
     }
 
@@ -205,6 +223,7 @@ Deno.serve(async (req: Request) => {
           prenom_enc,
           sexe,
           etablissement_id,
+          centre_id,
           etablissements!inner(id, nom)
         )
       `)
@@ -213,6 +232,12 @@ Deno.serve(async (req: Request) => {
 
     if (etablissementFilter) {
       resultatsQuery = resultatsQuery.eq('candidats.etablissement_id', etablissementFilter);
+    }
+
+    if (centreIds && centreIds.length > 0) {
+      resultatsQuery = centreIds.length === 1
+        ? resultatsQuery.eq('candidats.centre_id', centreIds[0])
+        : resultatsQuery.in('candidats.centre_id', centreIds);
     }
 
     const { data: resultats, error: resultatsError } = await resultatsQuery;
@@ -269,6 +294,7 @@ Deno.serve(async (req: Request) => {
         prenom_enc: string;
         sexe: string | null;
         etablissement_id: string;
+        centre_id: string | null;
         etablissements: { id: string; nom: string };
       };
 

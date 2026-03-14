@@ -4,20 +4,37 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Plus, Eye, Edit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useMemo } from 'react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function ExamensPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const statusFilter = searchParams.get('status');
     const [searchTerm, setSearchTerm] = useState('');
     const { data: examens, isLoading } = useExamens();
 
-    // Filtre local pour la liste globale (le nombre d'examens reste faible par rapport aux candidats)
-    const filteredExamens = examens?.filter(ex =>
-        ex.libelle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ex.code.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    // Application des filtres (recherche + éventuel paramètre de statut)
+    const filteredExamens = useMemo(() => {
+        let list = examens || [];
+
+        // Filtre de statut spécial (ex: ?status=DELIBERATION pour afficher les examens prêts ou en cours)
+        if (statusFilter === 'DELIBERATION') {
+            list = list.filter(ex => ['CORRECTION', 'DELIBERATION'].includes(ex.status));
+        }
+
+        // Filtre de recherche texte
+        if (searchTerm) {
+            const term = searchTerm.toLowerCase();
+            list = list.filter(ex =>
+                ex.libelle.toLowerCase().includes(term) ||
+                ex.code.toLowerCase().includes(term)
+            );
+        }
+
+        return list;
+    }, [examens, searchTerm, statusFilter]);
 
     const columns = [
         {
