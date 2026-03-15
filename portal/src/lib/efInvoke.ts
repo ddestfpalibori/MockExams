@@ -79,29 +79,48 @@ export async function efInvoke<T = unknown>(
         authHeaderLength: authHeader.Authorization.length,
     });
 
-    // Explicitly pass headers alongside body
-    const { data, error } = await supabase.functions.invoke<T>(
-        functionName,
-        {
-            body,
+    // Use fetch() directly instead of supabase.functions.invoke()
+    // because invoke() doesn't properly pass custom headers
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const url = `${supabaseUrl}/functions/v1/${functionName}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 Authorization: authHeader.Authorization,
             },
-        }
-    );
-
-    if (error) {
-        console.error('[efInvoke] invoke error response', {
-            functionName,
-            errorCode: (error as any).code,
-            errorMessage: (error as any).message,
-            errorStatus: (error as any).status,
+            body: body ? JSON.stringify(body) : undefined,
         });
-        throw error;
-    }
 
-    console.log('[efInvoke] invoke success', { functionName });
-    return data as T;
+        console.log('[efInvoke] fetch response', {
+            functionName,
+            status: response.status,
+            statusText: response.statusText,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[efInvoke] fetch error', {
+                functionName,
+                status: response.status,
+                statusText: response.statusText,
+                errorBody: errorText,
+            });
+            throw new Error(`${response.status} ${response.statusText}: ${errorText}`);
+        }
+
+        const data = await response.json() as T;
+        console.log('[efInvoke] invoke success', { functionName });
+        return data;
+    } catch (err) {
+        console.error('[efInvoke] fetch failed', {
+            functionName,
+            error: err instanceof Error ? err.message : String(err),
+        });
+        throw err;
+    }
 }
 
 /**
