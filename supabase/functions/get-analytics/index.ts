@@ -57,13 +57,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { role } = await requireAuth(req);
+    // Read body once to avoid consuming it twice
+    const bodyText = await req.text();
+    const body = bodyText ? JSON.parse(bodyText) : {};
+
+    const { role } = await requireAuth(req, body as Record<string, unknown>);
 
     if (role !== 'admin' && role !== 'tutelle' && role !== 'chef_etablissement' && role !== 'chef_centre') {
       return errJson({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
     }
 
-    const input = validateRequest(await req.json());
+    const input = validateRequest(body);
     const supabase = createServiceClient();
 
     // ── Vérifier que l'examen existe et est dans un état approprié ──────────

@@ -8,7 +8,7 @@ export function createServiceClient() {
   );
 }
 
-export async function requireAuth(req: Request): Promise<{ userId: string; role: string }> {
+export async function requireAuth(req: Request, parsedBody?: Record<string, unknown>): Promise<{ userId: string; role: string }> {
   // Try to get token from Authorization header first (fallback)
   let token = req.headers.get('Authorization')?.replace('Bearer ', '');
 
@@ -16,16 +16,16 @@ export async function requireAuth(req: Request): Promise<{ userId: string; role:
   // (Supabase Gateway blocks Authorization header, so we pass it in body as _auth_token)
   if (!token) {
     try {
-      const bodyText = await req.text();
-      const body = JSON.parse(bodyText) as Record<string, unknown>;
+      // Use pre-parsed body if provided (to avoid consuming req body twice)
+      let body = parsedBody;
+      if (!body) {
+        const bodyText = await req.text();
+        body = JSON.parse(bodyText) as Record<string, unknown>;
+      }
       token = body._auth_token as string;
-
-      // Reset request body for later use by handler
-      // Note: This is a limitation of Web API - we can't re-read the body
-      // So handlers should be aware that _auth_token will be present
       console.log('[requireAuth] Token extracted from body._auth_token');
     } catch (err) {
-      console.error('[requireAuth] Failed to parse request body', err);
+      console.error('[requireAuth] Failed to extract token from body', err);
     }
   } else {
     console.log('[requireAuth] Token extracted from Authorization header');

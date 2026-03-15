@@ -54,12 +54,15 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { role } = await requireAuth(req);
+    const bodyText = await req.text();
+    const body = bodyText ? JSON.parse(bodyText) : {};
+
+    const { role } = await requireAuth(req, body as Record<string, unknown>);
     if (role !== 'admin') {
       return json({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
     }
 
-    const input = validateRequest(await req.json());
+    const input = validateRequest(body);
     const supabase = createServiceClient();
 
     const { data: lot, error: lotError } = await supabase
