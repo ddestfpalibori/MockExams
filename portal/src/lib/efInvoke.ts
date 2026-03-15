@@ -2,22 +2,54 @@ import { supabase } from './supabase';
 
 /** Récupère le header Authorization avec un token garanti frais (refresh si expiré). */
 async function resolveAuthHeader(): Promise<{ Authorization: string }> {
+    const start = Date.now();
     let { data: { session } } = await supabase.auth.getSession();
+
+    const sessionInfo = {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        hasRefreshToken: !!session?.refresh_token,
+        accessTokenLength: session?.access_token?.length ?? 0,
+        expiresAt: session?.expires_at ?? null,
+        nowSeconds: Math.floor(Date.now() / 1000),
+    };
+
+    console.log('[efInvoke] getSession', sessionInfo);
 
     const isExpired = session?.expires_at
         ? session.expires_at * 1000 < Date.now()
         : !session;
 
     if (isExpired) {
-        const { data: refreshed } = await supabase.auth.refreshSession();
-        session = refreshed.session;
+        console.log('[efInvoke] token expired or missing, attempting refresh...');
+        const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+        console.log('[efInvoke] refreshSession result', {
+            hasSession: !!refreshed?.session,
+            hasAccessToken: !!refreshed?.session?.access_token,
+            hasRefreshToken: !!refreshed?.session?.refresh_token,
+            accessTokenLength: refreshed?.session?.access_token?.length ?? 0,
+            newExpiresAt: refreshed?.session?.expires_at ?? null,
+            error: refreshError?.message ?? null,
+        });
+        session = refreshed?.session ?? null;
     }
 
     if (!session?.access_token) {
+        console.error('[efInvoke] NO ACCESS TOKEN', {
+            hasSession: !!session,
+            expiresAt: session?.expires_at ?? null,
+        });
         throw new Error('Session expirée. Veuillez vous reconnecter.');
     }
 
-    return { Authorization: `Bearer ${session.access_token}` };
+    const header = { Authorization: `Bearer ${session.access_token}` };
+    console.log('[efInvoke] resolved header', {
+        hasAuthorization: !!header.Authorization,
+        authLength: header.Authorization.length,
+        elapsed: `${Date.now() - start}ms`,
+    });
+
+    return header;
 }
 
 /**
@@ -29,14 +61,48 @@ export async function efInvoke<T = unknown>(
     functionName: string,
     body?: Record<string, unknown>,
 ): Promise<T> {
-    const authHeader = await resolveAuthHeader();
+    let authHeader: { Authorization: string } | null = null;
+    try {
+        authHeader = await resolveAuthHeader();
+    } catch (err) {
+        console.error('[efInvoke] Failed to resolve auth header', err);
+        throw err;
+    }
 
-    const { data, error } = await supabase.functions.invoke(functionName, {
-        body,
-        headers: authHeader,
+    console.log('[efInvoke] calling invoke', {
+        functionName,
+        hasAuthHeader: !!authHeader,
+        authHeaderKeys: authHeader ? Object.keys(authHeader) : [],
+        bodyKeys: body ? Object.keys(body) : [],
     });
 
-    if (error) throw error;
+    const invokeOptions = {
+        body,
+        headers: authHeader,
+    };
+    console.log('[efInvoke] invoke options', {
+        functionName,
+        headersType: typeof invokeOptions.headers,
+        headersKeys: Object.keys(invokeOptions.headers || {}),
+    });
+
+    const { data, error } = await supabase.functions.invoke<T>(functionName, invokeOptions);
+
+    if (error) {
+        console.error('[efInvoke] invoke error', {
+            functionName,
+            errorCode: (error as any).code,
+            errorMessage: (error as any).message,
+            errorStatus: (error as any).status,
+        });
+        throw error;
+    }
+
+    if (!data) {
+        console.warn('[efInvoke] invoke returned null data', { functionName });
+    } else {
+        console.log('[efInvoke] invoke success', { functionName });
+    }
     return data as T;
 }
 
