@@ -69,27 +69,29 @@ export async function efInvoke<T = unknown>(
         throw err;
     }
 
-    console.log('[efInvoke] calling invoke', {
+    if (!authHeader?.Authorization) {
+        throw new Error('[efInvoke] Authorization header is missing after resolveAuthHeader()');
+    }
+
+    console.log('[efInvoke] About to invoke', {
         functionName,
-        hasAuthHeader: !!authHeader,
-        authHeaderKeys: authHeader ? Object.keys(authHeader) : [],
-        bodyKeys: body ? Object.keys(body) : [],
+        authorizationHeaderPresent: !!authHeader.Authorization,
+        authHeaderLength: authHeader.Authorization.length,
     });
 
-    const invokeOptions = {
-        body,
-        headers: authHeader,
-    };
-    console.log('[efInvoke] invoke options', {
+    // Explicitly pass headers alongside body
+    const { data, error } = await supabase.functions.invoke<T>(
         functionName,
-        headersType: typeof invokeOptions.headers,
-        headersKeys: Object.keys(invokeOptions.headers || {}),
-    });
-
-    const { data, error } = await supabase.functions.invoke<T>(functionName, invokeOptions);
+        {
+            body,
+            headers: {
+                Authorization: authHeader.Authorization,
+            },
+        }
+    );
 
     if (error) {
-        console.error('[efInvoke] invoke error', {
+        console.error('[efInvoke] invoke error response', {
             functionName,
             errorCode: (error as any).code,
             errorMessage: (error as any).message,
@@ -98,11 +100,7 @@ export async function efInvoke<T = unknown>(
         throw error;
     }
 
-    if (!data) {
-        console.warn('[efInvoke] invoke returned null data', { functionName });
-    } else {
-        console.log('[efInvoke] invoke success', { functionName });
-    }
+    console.log('[efInvoke] invoke success', { functionName });
     return data as T;
 }
 
