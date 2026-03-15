@@ -79,19 +79,32 @@ export async function efInvoke<T = unknown>(
         authHeaderLength: authHeader.Authorization.length,
     });
 
-    // Use fetch() directly instead of supabase.functions.invoke()
-    // because invoke() doesn't properly pass custom headers
+    // Supabase Gateway blocks Authorization header from reaching EF.
+    // Workaround: Pass token in request body instead.
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const url = `${supabaseUrl}/functions/v1/${functionName}`;
 
+    // Extract token from "Bearer ..." header
+    const token = authHeader.Authorization.replace('Bearer ', '');
+
+    // Merge token into body as _auth_token
+    const bodyWithToken = {
+        ...body,
+        _auth_token: token,
+    };
+
     try {
+        console.log('[efInvoke] Sending request with token in body', {
+            functionName,
+            hasToken: !!token,
+        });
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: authHeader.Authorization,
             },
-            body: body ? JSON.stringify(body) : undefined,
+            body: JSON.stringify(bodyWithToken),
         });
 
         console.log('[efInvoke] fetch response', {
