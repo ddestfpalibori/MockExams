@@ -59,13 +59,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const bodyText = await req.text();
-    const body = bodyText ? JSON.parse(bodyText) : {};
-
-    const { role } = await requireAuth(req, body as Record<string, unknown>);
+    const { role } = await requireAuth(req);
     if (role !== 'admin') {
       return errJson({ error: 'Accès réservé aux administrateurs', code: 'FORBIDDEN' }, 403);
     }
+
+    const body = await req.json();
     const supabase = createServiceClient();
 
     // ── Action : créer un utilisateur ───────────────────────────────────────

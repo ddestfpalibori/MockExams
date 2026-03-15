@@ -8,24 +8,16 @@ export function createServiceClient() {
   );
 }
 
-export async function requireAuth(req: Request, parsedBody?: Record<string, unknown>): Promise<{ userId: string; role: string }> {
-  // Try to get token from Authorization header first (fallback)
+export async function requireAuth(req: Request): Promise<{ userId: string; role: string }> {
+  // Try Authorization header first
   let token = req.headers.get('Authorization')?.replace('Bearer ', '');
 
-  // If not in header, try to extract from request body
-  // (Supabase Gateway blocks Authorization header, so we pass it in body as _auth_token)
+  // If not in standard Authorization header, try custom x-access-token header
+  // (Supabase Gateway blocks Authorization header, so we use custom header instead)
   if (!token) {
-    try {
-      // Use pre-parsed body if provided (to avoid consuming req body twice)
-      let body = parsedBody;
-      if (!body) {
-        const bodyText = await req.text();
-        body = JSON.parse(bodyText) as Record<string, unknown>;
-      }
-      token = body._auth_token as string;
-      console.log('[requireAuth] Token extracted from body._auth_token');
-    } catch (err) {
-      console.error('[requireAuth] Failed to extract token from body', err);
+    token = req.headers.get('x-access-token')?.replace('Bearer ', '');
+    if (token) {
+      console.log('[requireAuth] Token extracted from x-access-token header');
     }
   } else {
     console.log('[requireAuth] Token extracted from Authorization header');
@@ -34,7 +26,7 @@ export async function requireAuth(req: Request, parsedBody?: Record<string, unkn
   console.log('[requireAuth] Token present:', !!token);
 
   if (!token) {
-    console.error('[requireAuth] Missing token (not in header or body._auth_token)');
+    console.error('[requireAuth] Missing token (not in Authorization or x-access-token header)');
     throw new AuthError('Token manquant');
   }
 

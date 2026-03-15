@@ -87,14 +87,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const bodyText = await req.text();
-    const body = bodyText ? JSON.parse(bodyText) : {};
-
-    const { userId, role } = await requireAuth(req, body as Record<string, unknown>);
+    const { userId, role } = await requireAuth(req);
     if (role !== 'admin' && role !== 'chef_centre') {
       return errJson({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
     }
 
+    const body = await req.json();
     const { meta, rows } = body as VerifyImportRequest;
 
     // ── Cap de sécurité ─────────────────────────────────────────────────────
