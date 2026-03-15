@@ -9,28 +9,16 @@ export function createServiceClient() {
 }
 
 export async function requireAuth(req: Request): Promise<{ userId: string; role: string }> {
-  // Try Authorization header first
+  // Supabase Gateway blocks Authorization header, so we use x-access-token instead.
+  // EFs are deployed with --no-verify-jwt; we validate the token ourselves.
   let token = req.headers.get('Authorization')?.replace('Bearer ', '');
-
-  // If not in standard Authorization header, try custom x-access-token header
-  // (Supabase Gateway blocks Authorization header, so we use custom header instead)
   if (!token) {
     token = req.headers.get('x-access-token')?.replace('Bearer ', '');
-    if (token) {
-      console.log('[requireAuth] Token extracted from x-access-token header');
-    }
-  } else {
-    console.log('[requireAuth] Token extracted from Authorization header');
   }
-
-  console.log('[requireAuth] Token present:', !!token);
 
   if (!token) {
-    console.error('[requireAuth] Missing token (not in Authorization or x-access-token header)');
     throw new AuthError('Token manquant');
   }
-
-  console.log('[requireAuth] Token length:', token.length);
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -39,19 +27,7 @@ export async function requireAuth(req: Request): Promise<{ userId: string; role:
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
-  console.log('[requireAuth] getUser result', {
-    hasUser: !!user,
-    userId: user?.id ?? null,
-    error: error?.message ?? null,
-  });
-
-  if (error || !user) {
-    console.error('[requireAuth] Token validation failed', {
-      error: error?.message,
-      errorCode: (error as any)?.code,
-    });
-    throw new AuthError('Token invalide');
-  }
+  if (error || !user) throw new AuthError('Token invalide');
 
   const { data: profile, error: profileError } = await createServiceClient()
     .from('profiles')
@@ -59,18 +35,7 @@ export async function requireAuth(req: Request): Promise<{ userId: string; role:
     .eq('id', user.id)
     .single();
 
-  if (profileError || !profile) {
-    console.error('[requireAuth] Profile not found', {
-      userId: user.id,
-      error: profileError?.message,
-    });
-    throw new AuthError('Profil introuvable');
-  }
-
-  console.log('[requireAuth] Auth successful', {
-    userId: user.id,
-    role: profile.role,
-  });
+  if (profileError || !profile) throw new AuthError('Profil introuvable');
 
   return { userId: user.id, role: profile.role };
 }
