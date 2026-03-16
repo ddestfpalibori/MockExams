@@ -167,6 +167,7 @@ export type Database = {
           id: string
           import_id: string | null
           lieu_naissance_enc: string | null
+          matricule: string | null
           nom_enc: string
           numero_anonyme: string | null
           numero_table: number | null
@@ -187,6 +188,7 @@ export type Database = {
           id?: string
           import_id?: string | null
           lieu_naissance_enc?: string | null
+          matricule?: string | null
           nom_enc: string
           numero_anonyme?: string | null
           numero_table?: number | null
@@ -207,6 +209,7 @@ export type Database = {
           id?: string
           import_id?: string | null
           lieu_naissance_enc?: string | null
+          matricule?: string | null
           nom_enc?: string
           numero_anonyme?: string | null
           numero_table?: number | null
@@ -1348,6 +1351,7 @@ export type Database = {
           id: string | null
           import_id: string | null
           lieu_naissance_enc: string | null
+          matricule: string | null
           nom_enc: string | null
           numero_anonyme: string | null
           numero_table: number | null
