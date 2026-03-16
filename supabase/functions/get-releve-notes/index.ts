@@ -243,7 +243,7 @@ Deno.serve(async (req: Request) => {
         .select('id')
         .eq('examen_id', input.examen_id)
         .eq('etablissement_id', input.scope_id)
-        .order('nom').order('prenom')
+        .order('nom_enc').order('prenom_enc')
         .range(input.lot_offset, input.lot_offset + input.lot_size - 1);
 
       if (candsErr) throw candsErr;
@@ -264,7 +264,7 @@ Deno.serve(async (req: Request) => {
         .select('id')
         .eq('examen_id', input.examen_id)
         .eq('centre_id', input.scope_id)
-        .order('nom').order('prenom')
+        .order('nom_enc').order('prenom_enc')
         .range(input.lot_offset, input.lot_offset + input.lot_size - 1);
 
       if (candsErr) throw candsErr;
@@ -285,13 +285,15 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Récupérer les données complètes des candidats ─────────────────────────
+    // CRIT-01 : les PII sont stockées dans les colonnes _enc (AES-256-GCM)
     type CandidatDbRow = {
       id: string;
-      nom: string;
-      prenom: string;
-      date_naissance: string | null;
-      lieu_naissance: string | null;
+      nom_enc: string;
+      prenom_enc: string;
+      date_naissance_enc: string | null;
+      lieu_naissance_enc: string | null;
       matricule: string | null;
+      numero_table: number | null; // CRIT-02 : numero_table est dans candidats, pas candidat_lots
       etablissements: { nom: string } | null;
       series: { code: string } | null;
     };
@@ -300,40 +302,18 @@ Deno.serve(async (req: Request) => {
       .from('candidats')
       .select(`
         id,
-        nom,
-        prenom,
-        date_naissance,
-        lieu_naissance,
+        nom_enc,
+        prenom_enc,
+        date_naissance_enc,
+        lieu_naissance_enc,
         matricule,
+        numero_table,
         etablissements ( nom ),
         series ( code )
       `)
       .in('id', candidatIds);
 
     if (candidatsErr) throw candidatsErr;
-
-    // ── Numéros de table depuis candidat_lots (1 par candidat par examen) ─────
-    // MED-05 / CRIT-02 : requête unique avec lots!inner pour filtrer par examen_id
-    type CandidatLotRow = {
-      candidat_id: string;
-      numero_table: number | null;
-    };
-
-    const { data: lotsData, error: lotsErr } = await supabase
-      .from('candidat_lots')
-      .select('candidat_id, numero_table, lots!inner(examen_id)')
-      .in('candidat_id', candidatIds)
-      .eq('lots.examen_id', input.examen_id);
-
-    if (lotsErr) throw lotsErr;
-
-    // Construire une map candidat_id → numero_table
-    const tableMap = new Map<string, number | null>();
-    for (const lt of (lotsData ?? []) as CandidatLotRow[]) {
-      if (!tableMap.has(lt.candidat_id)) {
-        tableMap.set(lt.candidat_id, lt.numero_table);
-      }
-    }
 
     // ── Disciplines de l'examen ───────────────────────────────────────────────
     type ExDisciplineRow = {
@@ -366,18 +346,18 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Notes des candidats ───────────────────────────────────────────────────
-    // saisies → via candidat_lots (filtré par examen via la discipline)
+    // CRIT-02 : filtrer les saisies par examen_discipline_id de cet examen uniquement
+    // CRIT-03 : inclure code_special pour distinguer ABS/ABD/INAPTE des notes non saisies
     type SaisieRow = {
       candidat_lot_id: string;
       note_centimes: number | null;
+      code_special: string | null;
       candidat_lots: {
         candidat_id: string;
         examen_discipline_id: string;
       } | null;
     };
 
-    // CRIT-02 : filtrer les saisies par examen_discipline_id de cet examen uniquement
-    // (évite de remonter des notes d'autres examens pour les mêmes candidats)
     const examenDisciplineIds = Array.from(discMap.keys());
 
     const { data: saisiesData, error: saisiesErr } = await supabase
@@ -385,6 +365,7 @@ Deno.serve(async (req: Request) => {
       .select(`
         candidat_lot_id,
         note_centimes,
+        code_special,
         candidat_lots!inner (
           candidat_id,
           examen_discipline_id
@@ -395,15 +376,18 @@ Deno.serve(async (req: Request) => {
 
     if (saisiesErr) throw saisiesErr;
 
-    // Construire map : candidat_id → Map<examen_discipline_id, note_centimes>
-    const notesMap = new Map<string, Map<string, number | null>>();
+    // Construire map : candidat_id → Map<examen_discipline_id, { note_centimes, code_special }>
+    const notesMap = new Map<string, Map<string, { note_centimes: number | null; code_special: string | null }>>();
     for (const s of (saisiesData ?? []) as SaisieRow[]) {
       if (!s.candidat_lots) continue;
       const { candidat_id, examen_discipline_id } = s.candidat_lots;
       if (!notesMap.has(candidat_id)) {
         notesMap.set(candidat_id, new Map());
       }
-      notesMap.get(candidat_id)!.set(examen_discipline_id, s.note_centimes);
+      notesMap.get(candidat_id)!.set(examen_discipline_id, {
+        note_centimes: s.note_centimes,
+        code_special: s.code_special,
+      });
     }
 
     // ── Résultats ─────────────────────────────────────────────────────────────
@@ -434,28 +418,30 @@ Deno.serve(async (req: Request) => {
     const examenOrganisateur = 'DDEST-FP Alibori — Bénin';
 
     const releveData: CandidatReleve[] = (candidatsData ?? []).map((c: CandidatDbRow) => {
-      const candidatNotes = notesMap.get(c.id) ?? new Map<string, number | null>();
+      const candidatNotes = notesMap.get(c.id) ?? new Map<string, { note_centimes: number | null; code_special: string | null }>();
       const resultat = resultatMap.get(c.id);
 
       const notes: NoteItem[] = [];
       for (const [edId, discInfo] of discMap.entries()) {
+        const saisie = candidatNotes.get(edId) ?? null;
         notes.push({
           discipline_id: discInfo.discipline_id,
           discipline_libelle: discInfo.libelle,
           coefficient: discInfo.coefficient,
-          note_centimes: candidatNotes.get(edId) ?? null,
+          note_centimes: saisie?.note_centimes ?? null,
+          code_special: saisie?.code_special ?? null,
         });
       }
 
       return {
         candidat: {
           id: c.id,
-          nom: c.nom,
-          prenom: c.prenom,
-          date_naissance: c.date_naissance,
-          lieu_naissance: c.lieu_naissance,
+          nom: c.nom_enc,           // CRIT-01 : colonnes PII nommées _enc
+          prenom: c.prenom_enc,
+          date_naissance: c.date_naissance_enc,
+          lieu_naissance: c.lieu_naissance_enc,
           matricule: c.matricule,
-          numero_table: tableMap.get(c.id) ?? null,
+          numero_table: c.numero_table,  // CRIT-02 : numero_table est dans candidats
           etablissement_nom: c.etablissements?.nom ?? null,
           serie_code: c.series?.code ?? null,
         },

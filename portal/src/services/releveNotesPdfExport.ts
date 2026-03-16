@@ -3,11 +3,20 @@ import type { CandidatReleve } from './releveNotesService';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Convertit note_centimes (ex. 1350) en note /20 (ex. "13.50") */
-function fmtNote(centimes: number | null): string {
-    if (centimes === null) return 'Abs.';
+/** Convertit note_centimes + code_special en affichage /20 */
+function fmtNote(centimes: number | null, codeSpecial: string | null): string {
+    if (codeSpecial) {
+        switch (codeSpecial) {
+            case 'ABS':    return 'Abs.';
+            case 'ABD':    return 'Abd.';
+            case 'INAPTE': return 'Inap.';
+            default:       return codeSpecial;
+        }
+    }
+    if (centimes === null) return 'N/S'; // non saisi (différent d'absent)
     return (centimes / 100).toFixed(2);
 }
+
 
 /** Convertit moyenne_centimes en affichage /20 */
 function fmtMoyenne(centimes: number | null): string {
@@ -15,9 +24,9 @@ function fmtMoyenne(centimes: number | null): string {
     return (centimes / 100).toFixed(2);
 }
 
-/** Points = note × coefficient */
-function calcPoints(noteCentimes: number | null, coeff: number): string {
-    if (noteCentimes === null) return '—';
+/** Points = note × coefficient (nul si absent / code spécial) */
+function calcPoints(noteCentimes: number | null, codeSpecial: string | null, coeff: number): string {
+    if (codeSpecial || noteCentimes === null) return '—';
     return ((noteCentimes / 100) * coeff).toFixed(2);
 }
 
@@ -156,8 +165,6 @@ async function buildCandidatContent(
 
     // ── Tableau des notes ─────────────────────────────────────────────────────
     let totalCoeff = 0;
-    let totalPoints = 0;
-    let hasAllNotes = true;
 
     const notesBody: TableCell[][] = [
         [th('Discipline'), th('Coefficient'), th('Note (/20)'), th('Points')],
@@ -165,28 +172,19 @@ async function buildCandidatContent(
 
     for (const note of notes) {
         totalCoeff += note.coefficient;
-        if (note.note_centimes !== null) {
-            totalPoints += (note.note_centimes / 100) * note.coefficient;
-        } else {
-            hasAllNotes = false;
-        }
         notesBody.push([
             td(note.discipline_libelle),
             td(String(note.coefficient), false, 'center'),
-            td(fmtNote(note.note_centimes), false, 'center'),
-            td(calcPoints(note.note_centimes, note.coefficient), false, 'right'),
+            td(fmtNote(note.note_centimes, note.code_special), false, 'center'),
+            td(calcPoints(note.note_centimes, note.code_special, note.coefficient), false, 'right'),
         ]);
     }
 
-    // Ligne totaux
-    const moyenneCalc = hasAllNotes && totalCoeff > 0
-        ? (totalPoints / totalCoeff).toFixed(2)
-        : fmtMoyenne(resultat.moyenne_centimes);
-
+    // HIGH-01 : moyenne officielle depuis resultats (pas de recalcul — règles métier complexes)
     notesBody.push([
         { text: '—', fontSize: 9, alignment: 'right', italics: true },
         { text: String(totalCoeff), bold: true, fontSize: 9, alignment: 'center' },
-        { text: `Moy. : ${moyenneCalc}`, bold: true, fontSize: 9, alignment: 'center' },
+        { text: `Moy. : ${fmtMoyenne(resultat.moyenne_centimes)}`, bold: true, fontSize: 9, alignment: 'center' },
         { text: '—', fontSize: 9, alignment: 'right', italics: true },
     ]);
 

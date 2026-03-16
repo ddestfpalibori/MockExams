@@ -7,6 +7,7 @@ export interface NoteItem {
     discipline_libelle: string;
     coefficient: number;
     note_centimes: number | null;
+    code_special: string | null; // ABS | ABD | INAPTE — distinguer des notes non saisies
 }
 
 export interface CandidatReleve {
