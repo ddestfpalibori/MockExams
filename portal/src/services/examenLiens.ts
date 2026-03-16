@@ -72,11 +72,17 @@ export const examenLiensService = {
             examen_source: { id: string; libelle: string; annee: number; status: string } | null;
         };
 
+        // HIGH-04 : validation explicite (pas de cast aveugle)
+        const mode = raw.mode_heritage;
+        if (mode !== 'tous' && mode !== 'non_admis_uniquement') {
+            throw new Error(`mode_heritage invalide reçu de la base : ${mode}`);
+        }
+
         return {
             id: raw.id,
             examen_cible_id: raw.examen_cible_id,
             examen_source_id: raw.examen_source_id,
-            mode_heritage: raw.mode_heritage as 'tous' | 'non_admis_uniquement',
+            mode_heritage: mode,
             created_at: raw.created_at,
             etablissement_ids: raw.examen_lien_etablissements.map((e) => e.etablissement_id),
             examen_source: raw.examen_source,
@@ -154,36 +160,18 @@ export const examenLiensService = {
     },
 
     /**
-     * Met à jour le mode d'héritage et les établissements d'un lien existant
+     * Met à jour le mode d'héritage et les établissements d'un lien existant.
+     * CRIT-02 : opération atomique via RPC PostgreSQL (évite la fenêtre DELETE sans INSERT).
      */
     async updateLien(id: string, data: UpdateLienInput): Promise<void> {
-        // Mettre à jour le mode
-        const { error: updateError } = await supabase
-            .from('examen_liens')
-            .update({ mode_heritage: data.mode_heritage })
-            .eq('id', id);
-
-        if (updateError) throw updateError;
-
-        // Remplacer les établissements (DELETE + INSERT)
-        const { error: deleteError } = await supabase
-            .from('examen_lien_etablissements')
-            .delete()
-            .eq('lien_id', id);
-
-        if (deleteError) throw deleteError;
-
-        if (data.etablissement_ids.length > 0) {
-            const { error: insertError } = await supabase
-                .from('examen_lien_etablissements')
-                .insert(
-                    data.etablissement_ids.map((etablissement_id) => ({
-                        lien_id: id,
-                        etablissement_id,
-                    })),
-                );
-            if (insertError) throw insertError;
-        }
+        type RpcFn = (fn: string, args: Record<string, unknown>) => ReturnType<typeof supabase.rpc>;
+        const rpc = supabase.rpc as unknown as RpcFn;
+        const { error } = await rpc('update_lien_etablissements', {
+            p_lien_id: id,
+            p_mode: data.mode_heritage,
+            p_etablissement_ids: data.etablissement_ids,
+        });
+        if (error) throw error;
     },
 
     /**

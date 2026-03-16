@@ -91,11 +91,23 @@ BEGIN
         )
       )
   LOOP
-    -- Idempotence : ne copier que si fingerprint absent dans l'examen cible
-    IF rec.candidat_fingerprint IS NOT NULL AND EXISTS (
-      SELECT 1 FROM candidats c2
-      WHERE c2.examen_id = v_lien.examen_cible_id
-        AND c2.candidat_fingerprint = rec.candidat_fingerprint
+    -- CRIT-01 : idempotence robuste — deux stratégies selon disponibilité du fingerprint
+    -- • fingerprint non-null → déduplication via fingerprint (cas normal)
+    -- • fingerprint null     → déduplication via source_candidat_id (évite les doublons)
+    IF (
+      rec.candidat_fingerprint IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM candidats c2
+        WHERE c2.examen_id = v_lien.examen_cible_id
+          AND c2.candidat_fingerprint = rec.candidat_fingerprint
+      )
+    ) OR (
+      rec.candidat_fingerprint IS NULL
+      AND EXISTS (
+        SELECT 1 FROM candidats c2
+        WHERE c2.examen_id = v_lien.examen_cible_id
+          AND c2.source_candidat_id = rec.id
+      )
     ) THEN
       nb_ignores := nb_ignores + 1;
       CONTINUE;
@@ -134,4 +146,50 @@ BEGIN
 END;
 $$;
 
+-- HIGH-01 : authenticated pour appel depuis le frontend (JWT admin)
+--           service_role pour appel depuis une Edge Function future
+GRANT EXECUTE ON FUNCTION copier_candidats_depuis_lien(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION copier_candidats_depuis_lien(uuid) TO service_role;
+
+-- ─── RPC atomique : update_lien_etablissements ───────────────────────────────
+-- CRIT-02 : le DELETE + INSERT des établissements doit être atomique.
+-- Un appel direct PostgREST en deux requêtes séparées crée une fenêtre de temps
+-- où le lien n'a aucun établissement → fallback "tous" activé involontairement.
+
+CREATE OR REPLACE FUNCTION update_lien_etablissements(
+  p_lien_id          uuid,
+  p_mode             text,
+  p_etablissement_ids uuid[]
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
+BEGIN
+  IF NOT is_admin() THEN
+    RAISE EXCEPTION 'Permission refusée';
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM examen_liens WHERE id = p_lien_id) THEN
+    RAISE EXCEPTION 'Lien % introuvable', p_lien_id;
+  END IF;
+
+  IF p_mode NOT IN ('tous', 'non_admis_uniquement') THEN
+    RAISE EXCEPTION 'mode_heritage invalide : %', p_mode;
+  END IF;
+
+  -- UPDATE du mode + remplacement des établissements dans une seule transaction
+  UPDATE examen_liens SET mode_heritage = p_mode WHERE id = p_lien_id;
+
+  DELETE FROM examen_lien_etablissements WHERE lien_id = p_lien_id;
+
+  IF p_etablissement_ids IS NOT NULL AND array_length(p_etablissement_ids, 1) > 0 THEN
+    INSERT INTO examen_lien_etablissements (lien_id, etablissement_id)
+    SELECT p_lien_id, unnest(p_etablissement_ids);
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION update_lien_etablissements(uuid, text, uuid[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION update_lien_etablissements(uuid, text, uuid[]) TO service_role;
