@@ -16,6 +16,7 @@ import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ExamenTabDisciplines } from './ExamenTabDisciplines';
 import { ExamenTabCentres } from './ExamenTabCentres';
+import { ExamenTabLien } from './ExamenTabLien';
 import { ReleveNotesModal } from '@/components/releves/ReleveNotesModal';
 import { cn } from '@/lib/utils';
 import {
@@ -31,6 +32,7 @@ import {
     RotateCcw,
     Archive,
     FileText,
+    Link2,
 } from 'lucide-react';
 import type { ExamStatus, CentreRow } from '@/types/domain';
 
@@ -38,7 +40,7 @@ const STATUTS_RELEVES: ExamStatus[] = ['DELIBERATION', 'DELIBERE', 'PUBLIE', 'CL
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type TabId = 'resume' | 'disciplines' | 'centres';
+type TabId = 'resume' | 'disciplines' | 'centres' | 'lien';
 
 interface Tab {
     id: TabId;
@@ -52,6 +54,7 @@ const TABS: Tab[] = [
     { id: 'resume', label: 'Résumé', icon: <Settings className="h-4 w-4" /> },
     { id: 'disciplines', label: 'Disciplines', icon: <BookOpen className="h-4 w-4" /> },
     { id: 'centres', label: 'Centres', icon: <School className="h-4 w-4" /> },
+    { id: 'lien', label: 'Lien source', icon: <Link2 className="h-4 w-4" /> },
 ];
 
 // Libellés lisibles pour les valeurs d'enum
@@ -97,6 +100,7 @@ export default function ExamenDetailPage() {
     }
 
     const isConfig = examen.status === 'CONFIG';
+    const isInscriptions = examen.status === 'INSCRIPTIONS';
     const peutVoirReleves = STATUTS_RELEVES.includes(examen.status);
     const canOpenInscriptions = !statsLoading
         && (stats?.nb_disciplines ?? 0) > 0
@@ -279,6 +283,9 @@ export default function ExamenDetailPage() {
                     )}
                     {activeTab === 'centres' && (
                         <ExamenTabCentres examenId={id!} isEditable={isConfig} />
+                    )}
+                    {activeTab === 'lien' && (
+                        <ExamenTabLien examenId={id!} isEditable={isConfig || isInscriptions} />
                     )}
                 </div>
             </div>

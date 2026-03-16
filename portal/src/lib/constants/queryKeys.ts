@@ -62,4 +62,10 @@ export const QUERY_KEYS = {
         list: (examenId: string, scope: string, scopeId: string, offset?: number) =>
             ['releves', examenId, scope, scopeId, offset ?? 0] as const,
     },
+    liens: {
+        all: ['liens'] as const,
+        byExamen: (examenId: string) => ['liens', 'examen', examenId] as const,
+        etablissementsCommuns: (sourceId: string, cibleId: string) =>
+            ['liens', 'etablissements-communs', sourceId, cibleId] as const,
+    },
 } as const;
