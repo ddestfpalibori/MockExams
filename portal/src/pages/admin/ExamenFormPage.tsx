@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input, Select } from '@/components/ui/FormField';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Check, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +19,8 @@ const schema = z.object({
     code: z.string().min(2, 'Minimum 2 caractères').max(30, 'Maximum 30 caractères'),
     libelle: z.string().min(3, 'Minimum 3 caractères'),
     annee: z.number().int().min(2000, 'Année invalide').max(2100, 'Année invalide'),
+    logo_url: z.string().nullable().optional(),
+    signature_url: z.string().nullable().optional(),
 
     // Étape 2 — Composition
     anonymat_actif: z.boolean(),
@@ -86,6 +89,8 @@ const DEFAULT_VALUES: FormValues = {
     code: '',
     libelle: '',
     annee: new Date().getFullYear(),
+    logo_url: null,
+    signature_url: null,
     anonymat_actif: true,
     anonymat_prefixe: 'AN',
     anonymat_debut: 1,
@@ -260,6 +265,9 @@ export default function ExamenFormPage() {
 
     const [step, setStep] = useState(1);
 
+    // ID stable pour le bucket path : utilise l'ID existant en mode édition, sinon génère un UUID
+    const [assetId] = useState(() => id ?? crypto.randomUUID());
+
     const { data: examen, isLoading: loadingExamen } = useExamenDetail(id ?? '');
     const createMutation = useCreateExamen();
     const updateMutation = useUpdateExamen(id ?? '');
@@ -310,6 +318,8 @@ export default function ExamenFormPage() {
                 table_separator: examen.table_separator ?? '-',
                 table_padding: examen.table_padding ?? 4,
                 table_continuity_scope: examen.table_continuity_scope ?? 'CENTRE',
+                logo_url: examen.logo_url ?? null,
+                signature_url: examen.signature_url ?? null,
             });
         }
     }, [isEdit, examen, reset]);
@@ -422,6 +432,39 @@ export default function ExamenFormPage() {
                                     className="max-w-xs"
                                 />
                             </FormField>
+
+                            {/* ── Identité visuelle ─────────────────────────────────────────────── */}
+                            <div className="pt-4 border-t border-border">
+                                <h3 className="text-sm font-semibold text-primary mb-4">Identité visuelle</h3>
+                                <div className="flex flex-wrap gap-8">
+                                    <Controller
+                                        name="logo_url"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <ImageUpload
+                                                label="Logo"
+                                                hint="PNG, JPG ou SVG — max 5 MB"
+                                                value={field.value ?? null}
+                                                bucketPath={`${assetId}/logo`}
+                                                onChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        name="signature_url"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <ImageUpload
+                                                label="Signature & Cachet"
+                                                hint="PNG ou JPG transparent recommandé"
+                                                value={field.value ?? null}
+                                                bucketPath={`${assetId}/signature`}
+                                                onChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
                         </>
                     )}
 

@@ -64,6 +64,9 @@ export interface ExamenRow {
     table_padding: number;
     table_continuity_scope: TableContinuityScope;
 
+    logo_url: string | null;
+    signature_url: string | null;
+
     created_by: string | null;
     created_at: string;
     updated_at: string;

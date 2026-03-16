@@ -766,6 +766,8 @@ export type Database = {
           seuil_phase1: number
           seuil_phase2: number
           seuil_rattrapage: number | null
+          logo_url: string | null
+          signature_url: string | null
           status: Database["public"]["Enums"]["exam_status"]
           table_continuity_scope: Database["public"]["Enums"]["table_continuity_scope"]
           table_padding: number
@@ -800,6 +802,8 @@ export type Database = {
           seuil_phase1?: number
           seuil_phase2?: number
           seuil_rattrapage?: number | null
+          logo_url?: string | null
+          signature_url?: string | null
           status?: Database["public"]["Enums"]["exam_status"]
           table_continuity_scope?: Database["public"]["Enums"]["table_continuity_scope"]
           table_padding?: number
@@ -834,6 +838,8 @@ export type Database = {
           seuil_phase1?: number
           seuil_phase2?: number
           seuil_rattrapage?: number | null
+          logo_url?: string | null
+          signature_url?: string | null
           status?: Database["public"]["Enums"]["exam_status"]
           table_continuity_scope?: Database["public"]["Enums"]["table_continuity_scope"]
           table_padding?: number
