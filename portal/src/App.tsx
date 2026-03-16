@@ -146,7 +146,7 @@ function App() {
                         <Route
                             path="centre/*"
                             element={
-                                <RoleGuard allowedRoles={['chef_centre']}>
+                                <RoleGuard allowedRoles={['chef_centre', 'admin']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
                                             <Routes>
@@ -169,7 +169,7 @@ function App() {
                         <Route
                             path="etablissement/*"
                             element={
-                                <RoleGuard allowedRoles={['chef_etablissement']}>
+                                <RoleGuard allowedRoles={['chef_etablissement', 'admin']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
                                             <Routes>
@@ -189,7 +189,7 @@ function App() {
                         <Route
                             path="tutelle/*"
                             element={
-                                <RoleGuard allowedRoles={['tutelle']}>
+                                <RoleGuard allowedRoles={['tutelle', 'admin']}>
                                     <ErrorBoundary>
                                         <Suspense fallback={<LoadingFallback />}>
                                             <Routes>

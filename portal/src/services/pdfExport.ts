@@ -53,7 +53,7 @@ function buildTableRows(
             cells += `<td style="padding:4px 6px">${escapeHtml(c.nom)}</td>`;
             cells += `<td style="padding:4px 6px">${escapeHtml(c.prenom)}</td>`;
         }
-        cells += `<td style="padding:4px 6px;font-family:monospace">${c.numero_anonyme ?? '—'}</td>`;
+        cells += `<td style="padding:4px 6px;font-family:monospace">${escapeHtml(c.numero_anonyme ?? '—')}</td>`;
 
         for (const disc of disciplines) {
             const note = c.notes.find((n) => n.discipline_id === disc.id);
@@ -78,7 +78,7 @@ function buildHeaderRow(disciplines: DisciplineExport[], includeNom: boolean): s
     }
     headers += th('N° Anonyme');
     for (const disc of disciplines) {
-        headers += th(`${disc.libelle}<br/><span style="font-weight:400;font-size:10px">Coeff. ${disc.coefficient}</span>`, 'text-align:center');
+        headers += th(`${escapeHtml(disc.libelle)}<br/><span style="font-weight:400;font-size:10px">Coeff. ${disc.coefficient}</span>`, 'text-align:center');
     }
     headers += th('Moyenne', 'text-align:center');
     headers += th('Décision');

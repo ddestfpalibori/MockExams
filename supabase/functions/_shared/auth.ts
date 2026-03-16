@@ -31,11 +31,12 @@ export async function requireAuth(req: Request): Promise<{ userId: string; role:
 
   const { data: profile, error: profileError } = await createServiceClient()
     .from('profiles')
-    .select('role')
+    .select('role, is_active')
     .eq('id', user.id)
     .single();
 
   if (profileError || !profile) throw new AuthError('Profil introuvable');
+  if (!profile.is_active) throw new AuthError('Compte désactivé');
 
   return { userId: user.id, role: profile.role };
 }

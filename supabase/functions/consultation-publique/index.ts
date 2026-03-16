@@ -124,7 +124,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createServiceClient();
-    const ipHash = (await sha256Hex(ip + (Deno.env.get('IP_HASH_SALT') ?? 'mockexams'))).slice(0, 16);
+    const ipHashSalt = Deno.env.get('IP_HASH_SALT');
+    if (!ipHashSalt) {
+      console.error('[consultation-publique] IP_HASH_SALT manquant');
+      return errJson({ error: 'Erreur de configuration', code: 'INTERNAL_ERROR' }, 500);
+    }
+    const ipHash = (await sha256Hex(ip + ipHashSalt)).slice(0, 16);
 
     // ── 1. Rate limiting global par IP (DB persistée — 20 req/IP/min) ────────
     // Fail-open sur erreur DB : une panne du rate limiter ne bloque pas les candidats.
@@ -186,7 +191,11 @@ Deno.serve(async (req: Request) => {
     const candidatId = candidat?.id ?? null;
 
     // ── 5. Vérifier le code d'accès (hash) ─────────────────────────────────
-    const pepperSecret = Deno.env.get('CODE_ACCES_PEPPER') ?? '';
+    const pepperSecret = Deno.env.get('CODE_ACCES_PEPPER');
+    if (!pepperSecret) {
+      console.error('[consultation-publique] CODE_ACCES_PEPPER manquant');
+      return errJson({ error: 'Erreur de configuration', code: 'INTERNAL_ERROR' }, 500);
+    }
     const codeHash = await hmacSha256Hex(code_acces, pepperSecret);
 
     const { data: codeEntry } = candidatId
