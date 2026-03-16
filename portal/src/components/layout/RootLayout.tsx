@@ -14,6 +14,10 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { prefetchExamens, prefetchExamenStats } from '@/hooks/queries/useExamens';
+import { prefetchProfiles } from '@/hooks/queries/useProfiles';
+import { prefetchMyEtablissements } from '@/hooks/queries/useEtablissements';
 import { useNavigationHistory } from '@/hooks/useNavigationHistory';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -33,6 +37,7 @@ interface NavGroup {
 
 export const RootLayout = () => {
     const location = useLocation();
+    const queryClient = useQueryClient();
     const { role, signOut } = useAuth();
     const { goBack, canGoBack } = useNavigationHistory();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -42,6 +47,14 @@ export const RootLayout = () => {
 
     const dashboardPaths = ['/', '/admin', '/centre', '/etablissement', '/tutelle'];
     const isRootPage = dashboardPaths.includes(location.pathname);
+
+    // Fonction de prefetching intelligente basée sur le chemin
+    const handlePrefetch = (path: string) => {
+        if (path === '/admin') prefetchExamenStats(queryClient);
+        if (path === '/admin/examens') prefetchExamens(queryClient);
+        if (path === '/admin/utilisateurs') prefetchProfiles(queryClient);
+        if (path === '/etablissement/import') prefetchMyEtablissements(queryClient);
+    };
 
     // Définition des menus groupés par rôle
     const navGroups = useMemo((): NavGroup[] => {
@@ -267,6 +280,7 @@ export const RootLayout = () => {
                                                 <NavLink
                                                     key={item.path}
                                                     to={item.path}
+                                                    onMouseEnter={() => handlePrefetch(item.path)}
                                                     end={item.path.split('/').length <= 2}
                                                     className={({ isActive }) => cn(
                                                         "group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all",

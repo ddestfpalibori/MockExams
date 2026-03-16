@@ -119,7 +119,13 @@ export default function ExamensPage() {
                     data={filteredExamens}
                     rowKey={(row) => row.id}
                     isLoading={isLoading}
-                    emptyMessage="Aucun examen trouvé."
+                    emptyMessage={searchTerm ? "Aucun résultat pour votre recherche" : "Aucun examen configuré"}
+                    emptyDescription={searchTerm ? "Essayez de modifier vos mots-clés ou de réinitialiser les filtres." : "Commencez par créer votre premier examen pour cette session."}
+                    emptyAction={!searchTerm ? {
+                        label: "Créer un examen",
+                        onClick: () => navigate('/admin/examens/nouveau'),
+                        icon: Plus
+                    } : undefined}
                 />
             </div>
         </div>

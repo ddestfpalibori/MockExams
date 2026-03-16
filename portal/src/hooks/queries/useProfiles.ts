@@ -55,6 +55,15 @@ export function useProfiles() {
     });
 }
 
+/** Fonction globale pour pré-charger la liste des profils utilisateur */
+export async function prefetchProfiles(queryClient: ReturnType<typeof useQueryClient>) {
+    return queryClient.prefetchQuery({
+        queryKey: QUERY_KEYS.profiles.all,
+        queryFn: () => profileService.fetchProfiles(),
+        staleTime: CACHE_STRATEGY.standard.staleTime,
+    });
+}
+
 export function useAllEtablissements() {
     return useQuery({
         queryKey: QUERY_KEYS.etablissements.all,

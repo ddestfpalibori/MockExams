@@ -70,6 +70,16 @@ export interface CentreStats {
     centre_id: string;
     nom: string;
     ville: string | null;
+    code_commune: string | null;
+    total: number;
+    admis: number;
+    taux_reussite: number;
+    moyenne: number | null;
+}
+
+export interface CommuneStats {
+    code_commune: string;
+    ville: string | null;
     total: number;
     admis: number;
     taux_reussite: number;
@@ -95,13 +105,25 @@ export interface AnalyticsData {
     par_sexe: Partial<SexeStats>;
     par_etablissement: EtablissementStats[];
     par_centre: CentreStats[];
+    par_commune: CommuneStats[];
     par_milieu: MilieuStats[];
+}
+
+export interface AnalyticsFilters {
+    centre_id?: string;
+    etablissement_id?: string;
+    code_commune?: string;
 }
 
 // ── Fetch ─────────────────────────────────────────────────────────────────────
 
-export async function fetchAnalytics(examenId: string): Promise<AnalyticsData> {
-    return efInvoke<AnalyticsData>('get-analytics', { examen_id: examenId });
+export async function fetchAnalytics(examenId: string, filters?: AnalyticsFilters): Promise<AnalyticsData> {
+    return efInvoke<AnalyticsData>('get-analytics', {
+        examen_id: examenId,
+        ...(filters?.centre_id ? { centre_id: filters.centre_id } : {}),
+        ...(filters?.etablissement_id ? { etablissement_id: filters.etablissement_id } : {}),
+        ...(filters?.code_commune ? { code_commune: filters.code_commune } : {}),
+    });
 }
 
 // ── Moteur de Remédiation ─────────────────────────────────────────────────────

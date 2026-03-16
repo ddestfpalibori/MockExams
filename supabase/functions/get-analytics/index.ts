@@ -5,11 +5,14 @@
  * Accès : admin | tutelle | chef_etablissement | chef_centre
  *
  * POST /functions/v1/get-analytics
- * Body : { examen_id: string }
+ * Body : {
+ *   examen_id: string,
+ *   centre_id?: string,          // optionnel — scopé auto pour chef_centre
+ *   etablissement_id?: string,   // optionnel — scopé auto pour chef_etablissement
+ *   code_commune?: string,       // optionnel — admin/tutelle uniquement
+ * }
  *
- * Réponse JSON : résultat de get_analytics_examen(examen_id)
- * (global, distribution, par_discipline, par_serie, par_sexe,
- *  par_etablissement, par_centre, par_milieu)
+ * Réponse JSON : résultat de get_analytics_examen(...)
  */
 
 import { handleCors, corsHeaders } from '../_shared/cors.ts';
@@ -19,6 +22,9 @@ import { requireAuth, createServiceClient, AuthError } from '../_shared/auth.ts'
 
 interface AnalyticsRequest {
   examen_id: string;
+  centre_id?: string;
+  etablissement_id?: string;
+  code_commune?: string;
 }
 
 interface ErrorResponse {
@@ -43,7 +49,17 @@ function validateRequest(body: unknown): AnalyticsRequest {
   if (!b.examen_id || typeof b.examen_id !== 'string') {
     throw new ValidationError('examen_id requis');
   }
-  return { examen_id: b.examen_id };
+  const result: AnalyticsRequest = { examen_id: b.examen_id };
+  if (b.centre_id && typeof b.centre_id === 'string') {
+    result.centre_id = b.centre_id;
+  }
+  if (b.etablissement_id && typeof b.etablissement_id === 'string') {
+    result.etablissement_id = b.etablissement_id;
+  }
+  if (b.code_commune && typeof b.code_commune === 'string') {
+    result.code_commune = b.code_commune;
+  }
+  return result;
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -57,7 +73,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { role } = await requireAuth(req);
+    const { userId, role } = await requireAuth(req);
 
     if (role !== 'admin' && role !== 'tutelle' && role !== 'chef_etablissement' && role !== 'chef_centre') {
       return errJson({ error: 'Accès refusé', code: 'FORBIDDEN' }, 403);
@@ -91,9 +107,73 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // ── Résolution des filtres selon le rôle ─────────────────────────────────
+
+    let resolvedCentreId: string | null = null;
+    let resolvedEtabId: string | null = null;
+    let resolvedCommune: string | null = null;
+
+    if (role === 'chef_centre') {
+      // Récupère les centres affectés à cet utilisateur
+      const { data: assignments, error: assignErr } = await supabase
+        .from('user_centres')
+        .select('centre_id')
+        .eq('user_id', userId);
+
+      if (assignErr) throw assignErr;
+
+      const centreIds = (assignments ?? []).map((a: { centre_id: string }) => a.centre_id);
+
+      if (centreIds.length === 0) {
+        return errJson({ error: 'Aucun centre affecté à cet utilisateur', code: 'FORBIDDEN' }, 403);
+      }
+
+      if (input.centre_id) {
+        // Vérifier que le centre demandé est bien dans les centres affectés
+        if (!centreIds.includes(input.centre_id)) {
+          return errJson({ error: 'Accès refusé à ce centre', code: 'FORBIDDEN' }, 403);
+        }
+        resolvedCentreId = input.centre_id;
+      } else {
+        // Scope automatique sur le premier centre affecté
+        resolvedCentreId = centreIds[0];
+      }
+    } else if (role === 'chef_etablissement') {
+      // Récupère les établissements affectés à cet utilisateur
+      const { data: assignments, error: assignErr } = await supabase
+        .from('user_etablissements')
+        .select('etablissement_id')
+        .eq('user_id', userId);
+
+      if (assignErr) throw assignErr;
+
+      const etabIds = (assignments ?? []).map((a: { etablissement_id: string }) => a.etablissement_id);
+
+      if (etabIds.length === 0) {
+        return errJson({ error: 'Aucun établissement affecté à cet utilisateur', code: 'FORBIDDEN' }, 403);
+      }
+
+      if (input.etablissement_id) {
+        if (!etabIds.includes(input.etablissement_id)) {
+          return errJson({ error: 'Accès refusé à cet établissement', code: 'FORBIDDEN' }, 403);
+        }
+        resolvedEtabId = input.etablissement_id;
+      } else {
+        resolvedEtabId = etabIds[0];
+      }
+    } else {
+      // admin ou tutelle : utiliser les filtres demandés tels quels
+      resolvedCentreId = input.centre_id ?? null;
+      resolvedEtabId = input.etablissement_id ?? null;
+      resolvedCommune = input.code_commune ?? null;
+    }
+
     // ── Appel de la fonction PostgreSQL ──────────────────────────────────────
     const { data, error: rpcError } = await supabase.rpc('get_analytics_examen', {
       p_examen_id: input.examen_id,
+      p_centre_id: resolvedCentreId,
+      p_etablissement_id: resolvedEtabId,
+      p_code_commune: resolvedCommune,
     });
 
     if (rpcError) {

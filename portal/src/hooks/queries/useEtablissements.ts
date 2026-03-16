@@ -18,6 +18,15 @@ export function useMyEtablissements() {
     });
 }
 
+/** Fonction globale pour pré-charger les établissements rattachés */
+export async function prefetchMyEtablissements(queryClient: ReturnType<typeof useQueryClient>) {
+    return queryClient.prefetchQuery({
+        queryKey: QUERY_KEYS.etablissements.mine(),
+        queryFn: () => etablissementService.fetchMyEtablissements(),
+        staleTime: CACHE_STRATEGY.standard.staleTime,
+    });
+}
+
 export function useEtablissementStats(etablissementId: string) {
     return useQuery({
         queryKey: QUERY_KEYS.etablissements.stats(etablissementId),

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
+import { Search, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './Skeleton';
+import { EmptyState } from './EmptyState';
 
 export interface Column<T> {
     key: string;
@@ -15,6 +17,13 @@ export interface DataTableProps<T> {
     data: T[];
     isLoading?: boolean;
     emptyMessage?: string;
+    emptyDescription?: string;
+    emptyIcon?: LucideIcon;
+    emptyAction?: {
+        label: string;
+        onClick: () => void;
+        icon?: LucideIcon;
+    };
     className?: string;
     rowKey: (row: T) => string;
 }
@@ -24,6 +33,9 @@ export function DataTable<T>({
     data,
     isLoading = false,
     emptyMessage = 'Aucun résultat',
+    emptyDescription,
+    emptyIcon = Search,
+    emptyAction,
     className,
     rowKey,
 }: DataTableProps<T>) {
@@ -60,9 +72,14 @@ export function DataTable<T>({
                         <tr>
                             <td
                                 colSpan={columns.length}
-                                className="px-4 py-12 text-center text-muted"
+                                className="px-4 py-12"
                             >
-                                {emptyMessage}
+                                <EmptyState
+                                    title={emptyMessage}
+                                    description={emptyDescription}
+                                    icon={emptyIcon}
+                                    action={emptyAction}
+                                />
                             </td>
                         </tr>
                     ) : (

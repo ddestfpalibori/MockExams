@@ -17,6 +17,15 @@ export function useExamens() {
     });
 }
 
+/** Fonction globale pour pré-charger la liste des examens hors-composant */
+export async function prefetchExamens(queryClient: ReturnType<typeof useQueryClient>) {
+    return queryClient.prefetchQuery({
+        queryKey: QUERY_KEYS.examens.list(),
+        queryFn: () => examenService.fetchExamens(),
+        staleTime: CACHE_STRATEGY.standard.staleTime,
+    });
+}
+
 export function useExamenDetail(id: string) {
     return useQuery({
         queryKey: QUERY_KEYS.examens.detail(id),
@@ -31,6 +40,15 @@ export function useExamenStats() {
         queryKey: QUERY_KEYS.examens.stats(),
         queryFn: () => examenService.fetchExamenStats(),
         ...CACHE_STRATEGY.frequente,
+    });
+}
+
+/** Fonction globale pour pré-charger les statistiques hors-composant */
+export async function prefetchExamenStats(queryClient: ReturnType<typeof useQueryClient>) {
+    return queryClient.prefetchQuery({
+        queryKey: QUERY_KEYS.examens.stats(),
+        queryFn: () => examenService.fetchExamenStats(),
+        staleTime: CACHE_STRATEGY.frequente.staleTime,
     });
 }
 

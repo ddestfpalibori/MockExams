@@ -2,6 +2,8 @@
  * QUERY_KEYS — Clés hiérarchiques pour TanStack React Query
  * Structure hiérarchique pour invalidation ciblée ou globale.
  */
+import type { AnalyticsFilters } from '@/services/analyticsService';
+
 export const QUERY_KEYS = {
     examens: {
         all: ['examens'] as const,
@@ -52,6 +54,7 @@ export const QUERY_KEYS = {
     },
     analytics: {
         all: ['analytics'] as const,
-        examen: (id: string) => ['analytics', 'examen', id] as const,
+        examen: (id: string, filters?: AnalyticsFilters) =>
+            ['analytics', 'examen', id, filters ?? null] as const,
     },
 } as const;
