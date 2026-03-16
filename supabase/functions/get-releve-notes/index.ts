@@ -102,7 +102,10 @@ function validateRequest(body: unknown): ReleveRequest {
     throw new ValidationError('scope_id requis');
   }
 
-  const lot_size = typeof b.lot_size === 'number' && b.lot_size > 0 ? b.lot_size : 50;
+  const lot_size = Math.min(
+    typeof b.lot_size === 'number' && b.lot_size > 0 ? b.lot_size : 50,
+    100, // CRIT-01 : plafond serveur — évite l'exfiltration massive de PII
+  );
   const lot_offset = typeof b.lot_offset === 'number' && b.lot_offset >= 0 ? b.lot_offset : 0;
 
   return {
@@ -149,6 +152,15 @@ Deno.serve(async (req: Request) => {
 
     if (examenError || !examen) {
       return errJson({ error: 'Examen introuvable', code: 'EXAMEN_NOT_FOUND' }, 404);
+    }
+
+    // HIGH-02 : vérifier le statut de l'examen côté serveur
+    const STATUTS_AUTORISES = ['DELIBERATION', 'CORRECTION_POST_DELIBERATION', 'DELIBERE', 'PUBLIE', 'CLOS'];
+    if (!STATUTS_AUTORISES.includes(examen.status as string)) {
+      return errJson(
+        { error: 'Relevés non disponibles pour ce statut d\'examen', code: 'EXAM_STATUS_INVALID' },
+        403,
+      );
     }
 
     // ── Contrôle RBAC par scope ───────────────────────────────────────────────
@@ -231,7 +243,7 @@ Deno.serve(async (req: Request) => {
         .select('id')
         .eq('examen_id', input.examen_id)
         .eq('etablissement_id', input.scope_id)
-        .order('id')
+        .order('nom').order('prenom')
         .range(input.lot_offset, input.lot_offset + input.lot_size - 1);
 
       if (candsErr) throw candsErr;
@@ -252,7 +264,7 @@ Deno.serve(async (req: Request) => {
         .select('id')
         .eq('examen_id', input.examen_id)
         .eq('centre_id', input.scope_id)
-        .order('id')
+        .order('nom').order('prenom')
         .range(input.lot_offset, input.lot_offset + input.lot_size - 1);
 
       if (candsErr) throw candsErr;
@@ -301,6 +313,7 @@ Deno.serve(async (req: Request) => {
     if (candidatsErr) throw candidatsErr;
 
     // ── Numéros de table depuis candidat_lots (1 par candidat par examen) ─────
+    // MED-05 / CRIT-02 : requête unique avec lots!inner pour filtrer par examen_id
     type CandidatLotRow = {
       candidat_id: string;
       numero_table: number | null;
@@ -308,39 +321,17 @@ Deno.serve(async (req: Request) => {
 
     const { data: lotsData, error: lotsErr } = await supabase
       .from('candidat_lots')
-      .select(`
-        candidat_id,
-        numero_table
-      `)
+      .select('candidat_id, numero_table, lots!inner(examen_id)')
       .in('candidat_id', candidatIds)
       .eq('lots.examen_id', input.examen_id);
 
-    if (lotsErr) {
-      // La jointure interne peut échouer si lots n'a pas de ligne pour cet examen ;
-      // on continue avec un tableau vide (numero_table sera null)
-      console.warn('[get-releve-notes] Erreur récupération lots:', lotsErr.message);
-    }
+    if (lotsErr) throw lotsErr;
 
     // Construire une map candidat_id → numero_table
     const tableMap = new Map<string, number | null>();
     for (const lt of (lotsData ?? []) as CandidatLotRow[]) {
       if (!tableMap.has(lt.candidat_id)) {
         tableMap.set(lt.candidat_id, lt.numero_table);
-      }
-    }
-
-    // Fallback si la jointure interne a foiré : requête directe candidat_lots → lots
-    if (tableMap.size === 0 && candidatIds.length > 0) {
-      const { data: lotsAlt } = await supabase
-        .from('candidat_lots')
-        .select('candidat_id, numero_table, lots!inner(examen_id)')
-        .in('candidat_id', candidatIds)
-        .eq('lots.examen_id', input.examen_id);
-
-      for (const lt of (lotsAlt ?? []) as Array<{ candidat_id: string; numero_table: number | null }>) {
-        if (!tableMap.has(lt.candidat_id)) {
-          tableMap.set(lt.candidat_id, lt.numero_table);
-        }
       }
     }
 
@@ -385,6 +376,10 @@ Deno.serve(async (req: Request) => {
       } | null;
     };
 
+    // CRIT-02 : filtrer les saisies par examen_discipline_id de cet examen uniquement
+    // (évite de remonter des notes d'autres examens pour les mêmes candidats)
+    const examenDisciplineIds = Array.from(discMap.keys());
+
     const { data: saisiesData, error: saisiesErr } = await supabase
       .from('saisies')
       .select(`
@@ -395,11 +390,10 @@ Deno.serve(async (req: Request) => {
           examen_discipline_id
         )
       `)
-      .in('candidat_lots.candidat_id', candidatIds);
+      .in('candidat_lots.candidat_id', candidatIds)
+      .in('candidat_lots.examen_discipline_id', examenDisciplineIds);
 
-    if (saisiesErr) {
-      console.warn('[get-releve-notes] Erreur récupération saisies:', saisiesErr.message);
-    }
+    if (saisiesErr) throw saisiesErr;
 
     // Construire map : candidat_id → Map<examen_discipline_id, note_centimes>
     const notesMap = new Map<string, Map<string, number | null>>();
