@@ -6,9 +6,16 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Select } from '@/components/ui/FormField';
 import { Pagination } from '@/components/ui/Pagination';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { Button } from '@/components/ui/Button';
+import { ReleveNotesModal } from '@/components/releves/ReleveNotesModal';
+import { useAuth } from '@/hooks/useAuth';
+import { useActiveEtablissement } from '@/hooks/useActiveEtablissement';
+import { FileText } from 'lucide-react';
 import type { CandidatRow, ExamenRow } from '@/types/domain';
 
 const PAGE_SIZE = 50;
+
+const STATUTS_RELEVES: ExamenRow['status'][] = ['DELIBERATION', 'DELIBERE', 'PUBLIE', 'CLOS'];
 
 export default function CandidatsPage() {
     const [searchParams] = useSearchParams();
@@ -16,6 +23,10 @@ export default function CandidatsPage() {
 
     const [examenId, setExamenId] = useState(defaultExamenId);
     const [search, setSearch] = useState('');
+    const [releveOpen, setReleveOpen] = useState(false);
+
+    const { role } = useAuth();
+    const { activeId: etablissementId, etablissements } = useActiveEtablissement();
 
     const { data: examens } = useExamens();
 
@@ -26,6 +37,9 @@ export default function CandidatsPage() {
         setPage,
         isLoading,
     } = useCandidats({ examenId, pageSize: PAGE_SIZE, search });
+
+    const examenSelectionne = (examens ?? []).find((ex: ExamenRow) => ex.id === examenId);
+    const peutVoirReleves = examenSelectionne ? STATUTS_RELEVES.includes(examenSelectionne.status) : false;
 
     const columns: Column<CandidatRow>[] = [
         {
@@ -92,6 +106,18 @@ export default function CandidatsPage() {
                         setPage(1);
                     }}
                 />
+
+                {peutVoirReleves && etablissementId && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setReleveOpen(true)}
+                        className="flex items-center gap-1.5"
+                    >
+                        <FileText className="h-4 w-4" />
+                        Relevés de notes
+                    </Button>
+                )}
             </div>
 
             <DataTable
@@ -112,6 +138,19 @@ export default function CandidatsPage() {
                     pageSize={PAGE_SIZE}
                     total={total}
                     onPageChange={setPage}
+                />
+            )}
+
+            {examenSelectionne && etablissementId && role && (
+                <ReleveNotesModal
+                    open={releveOpen}
+                    onOpenChange={setReleveOpen}
+                    examenId={examenSelectionne.id}
+                    examenLibelle={examenSelectionne.libelle}
+                    examenAnnee={examenSelectionne.annee}
+                    userRole={role}
+                    etablissements={etablissements}
+                    defaultEtablissementId={etablissementId}
                 />
             )}
         </div>

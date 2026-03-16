@@ -7,20 +7,27 @@ import { Select } from '@/components/ui/FormField';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EntitySelector } from '@/components/ui/EntitySelector';
-import { Users, CheckCircle } from 'lucide-react';
+import { ReleveNotesModal } from '@/components/releves/ReleveNotesModal';
+import { useAuth } from '@/hooks/useAuth';
+import { Users, CheckCircle, FileText } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
+
+const STATUTS_RELEVES: ExamenRow['status'][] = ['DELIBERATION', 'DELIBERE', 'PUBLIE', 'CLOS'];
 
 export default function AffectationPage() {
     const { activeId: centreId, centres, isMulti, setActiveId } = useActiveCentre();
+    const { role } = useAuth();
 
     const { data: examens, isLoading: examensLoading } = useExamens();
     const [examenId, setExamenId] = useState('');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [lastResult, setLastResult] = useState<number | null>(null);
+    const [releveOpen, setReleveOpen] = useState(false);
 
     const affecter = useAffecter(centreId);
 
     const examenSelectionne = examens?.find((e: ExamenRow) => e.id === examenId);
+    const peutVoirReleves = examenSelectionne ? STATUTS_RELEVES.includes(examenSelectionne.status) : false;
 
     const handleAffecter = async () => {
         const nb = await affecter.mutateAsync(examenId);
@@ -99,14 +106,27 @@ export default function AffectationPage() {
                     </p>
                 </div>
 
-                <Button
-                    onClick={() => setConfirmOpen(true)}
-                    disabled={!examenId || !centreId}
-                    className="flex items-center gap-2"
-                >
-                    <Users className="h-4 w-4" />
-                    Affecter les candidats aux salles
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        onClick={() => setConfirmOpen(true)}
+                        disabled={!examenId || !centreId}
+                        className="flex items-center gap-2"
+                    >
+                        <Users className="h-4 w-4" />
+                        Affecter les candidats aux salles
+                    </Button>
+
+                    {peutVoirReleves && centreId && (
+                        <Button
+                            variant="outline"
+                            onClick={() => setReleveOpen(true)}
+                            className="flex items-center gap-2"
+                        >
+                            <FileText className="h-4 w-4" />
+                            Relevés de notes
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {lastResult !== null && (
@@ -142,6 +162,19 @@ export default function AffectationPage() {
                     Cette opération est sûre et peut être relancée.
                 </p>
             </Modal>
+
+            {examenSelectionne && centreId && role && (
+                <ReleveNotesModal
+                    open={releveOpen}
+                    onOpenChange={setReleveOpen}
+                    examenId={examenSelectionne.id}
+                    examenLibelle={examenSelectionne.libelle}
+                    examenAnnee={examenSelectionne.annee}
+                    userRole={role}
+                    centres={centres}
+                    defaultCentreId={centreId}
+                />
+            )}
         </div>
     );
 }

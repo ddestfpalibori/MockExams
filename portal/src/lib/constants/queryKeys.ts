@@ -57,4 +57,9 @@ export const QUERY_KEYS = {
         examen: (id: string, filters?: AnalyticsFilters) =>
             ['analytics', 'examen', id, filters ?? null] as const,
     },
+    releves: {
+        all: ['releves'] as const,
+        list: (examenId: string, scope: string, scopeId: string, offset?: number) =>
+            ['releves', examenId, scope, scopeId, offset ?? 0] as const,
+    },
 } as const;

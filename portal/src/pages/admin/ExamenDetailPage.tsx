@@ -6,6 +6,7 @@ import {
     useExamenDetailStats,
     useTransitionPhase,
     useDeliberation,
+    useExamenCentres,
 } from '@/hooks/queries/useExamens';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
@@ -15,6 +16,7 @@ import { Modal } from '@/components/ui/Modal';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ExamenTabDisciplines } from './ExamenTabDisciplines';
 import { ExamenTabCentres } from './ExamenTabCentres';
+import { ReleveNotesModal } from '@/components/releves/ReleveNotesModal';
 import { cn } from '@/lib/utils';
 import {
     Settings,
@@ -28,8 +30,11 @@ import {
     Edit,
     RotateCcw,
     Archive,
+    FileText,
 } from 'lucide-react';
-import type { ExamStatus } from '@/types/domain';
+import type { ExamStatus, CentreRow } from '@/types/domain';
+
+const STATUTS_RELEVES: ExamStatus[] = ['DELIBERATION', 'DELIBERE', 'PUBLIE', 'CLOS'];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -74,12 +79,14 @@ export default function ExamenDetailPage() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<TabId>('resume');
     const [transitionTarget, setTransitionTarget] = useState<ExamStatus | null>(null);
+    const [releveOpen, setReleveOpen] = useState(false);
 
     const { data: examen, isLoading } = useExamenDetail(id!);
     const { data: stats, isLoading: statsLoading } = useExamenDetailStats(id!);
+    const { data: centresData } = useExamenCentres(id!);
     const transitionMutation = useTransitionPhase(id!);
     const delibererMutation = useDeliberation(id!);
-    const { user } = useAuth();
+    const { user, role } = useAuth();
     const [deliberationErrors, setDeliberationErrors] = useState<Array<{ candidat_id: string; message: string }>>([]);
 
     if (isLoading) {
@@ -90,6 +97,7 @@ export default function ExamenDetailPage() {
     }
 
     const isConfig = examen.status === 'CONFIG';
+    const peutVoirReleves = STATUTS_RELEVES.includes(examen.status);
     const canOpenInscriptions = !statsLoading
         && (stats?.nb_disciplines ?? 0) > 0
         && (stats?.nb_centres ?? 0) > 0;
@@ -133,6 +141,12 @@ export default function ExamenDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                    {peutVoirReleves && (
+                        <Button variant="outline" size="sm" onClick={() => setReleveOpen(true)}>
+                            <FileText className="mr-1.5 h-3.5 w-3.5" />
+                            Relevés de notes
+                        </Button>
+                    )}
                     {isConfig && (
                         <Button variant="outline" size="sm" onClick={() => navigate(`/admin/examens/${id}/edit`)}>
                             <Edit className="mr-1.5 h-3.5 w-3.5" />
@@ -310,6 +324,18 @@ export default function ExamenDetailPage() {
                     </p>
                 )}
             </Modal>
+
+            {peutVoirReleves && role && (
+                <ReleveNotesModal
+                    open={releveOpen}
+                    onOpenChange={setReleveOpen}
+                    examenId={examen.id}
+                    examenLibelle={examen.libelle}
+                    examenAnnee={examen.annee}
+                    userRole={role}
+                    centres={(centresData ?? []) as CentreRow[]}
+                />
+            )}
         </div>
     );
 }

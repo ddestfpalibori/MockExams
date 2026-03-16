@@ -67,12 +67,16 @@ declare module 'pdfmake/interfaces' {
               noWrap?: boolean;
               colSpan?: number;
               rowSpan?: number;
+              border?: [boolean, boolean, boolean, boolean];
           };
 
     export type Content =
         | string
         | ContentText
         | ContentTable
+        | ContentImage
+        | ContentColumns
+        | ContentStack
         | Content[];
 
     export interface ContentText {
@@ -84,6 +88,7 @@ declare module 'pdfmake/interfaces' {
         color?: string;
         alignment?: Alignment;
         margin?: Margins;
+        pageBreak?: 'before' | 'after';
     }
 
     export interface ContentTable {
@@ -95,6 +100,34 @@ declare module 'pdfmake/interfaces' {
         layout?: string | TableLayout;
         style?: string | string[];
         margin?: Margins;
+    }
+
+    export interface ContentImage {
+        image: string;
+        width?: number;
+        height?: number;
+        fit?: [number, number];
+        alignment?: Alignment;
+        margin?: Margins;
+        style?: string | string[];
+    }
+
+    /** Élément utilisable dans une colonne (peut avoir width pour définir la largeur) */
+    export type ColumnItem = (Content | ContentImage | ContentStack) & { width?: number | string };
+
+    export interface ContentColumns {
+        columns: ColumnItem[];
+        columnGap?: number;
+        margin?: Margins;
+        style?: string | string[];
+    }
+
+    export interface ContentStack {
+        stack: Content[];
+        margin?: Margins;
+        style?: string | string[];
+        alignment?: Alignment;
+        width?: number | string;
     }
 
     export interface TableLayout {
