@@ -41,6 +41,11 @@ const ResultatsPage = lazy(() => import('./pages/tutelle/ResultatsPage'));
 // Analytics (admin + tutelle)
 const AnalyticsPage = lazy(() => import('./pages/admin/AnalyticsPage'));
 
+// Enseignant
+const EnseignantDashboard = lazy(() => import('./pages/enseignant/EnseignantDashboard'));
+const SuiviNotesPage = lazy(() => import('./pages/enseignant/SuiviNotesPage'));
+const RemediationPage = lazy(() => import('./pages/enseignant/RemediationPage'));
+
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
 const LoadingFallback = () => (
@@ -82,6 +87,7 @@ const RoleRedirect = () => {
         case 'chef_centre': return <Navigate to="/centre" replace />;
         case 'chef_etablissement': return <Navigate to="/etablissement" replace />;
         case 'tutelle': return <Navigate to="/tutelle" replace />;
+        case 'enseignant': return <Navigate to="/enseignant" replace />;
         default: return (
             <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
                 <h2 className="text-2xl font-bold mb-4">Tableau de bord</h2>
@@ -196,6 +202,23 @@ function App() {
                                                 <Route index element={<TutelleDashboard />} />
                                                 <Route path="resultats" element={<ResultatsPage />} />
                                                 <Route path="analytics" element={<AnalyticsPage />} />
+                                            </Routes>
+                                        </Suspense>
+                                    </ErrorBoundary>
+                                </RoleGuard>
+                            }
+                        />
+                        {/* ── Enseignant ── */}
+                        <Route
+                            path="enseignant/*"
+                            element={
+                                <RoleGuard allowedRoles={['enseignant', 'admin']}>
+                                    <ErrorBoundary>
+                                        <Suspense fallback={<LoadingFallback />}>
+                                            <Routes>
+                                                <Route index element={<EnseignantDashboard />} />
+                                                <Route path="suivi/:id" element={<SuiviNotesPage />} />
+                                                <Route path="remediation/:id" element={<RemediationPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>

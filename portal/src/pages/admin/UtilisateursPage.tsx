@@ -5,6 +5,7 @@ import {
     useAssignCentre, useRemoveCentre,
     useAssignEtablissement, useRemoveEtablissement,
 } from '@/hooks/queries/useProfiles';
+import { useUserDisciplineAssignments, useRemoveEnseignantDiscipline } from '@/hooks/queries/useEnseignant';
 import { profileService } from '@/services/profiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/lib/constants/queryKeys';
@@ -13,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { FormField, Input, Select } from '@/components/ui/FormField';
-import { Plus, UserX, KeyRound, Building2, X } from 'lucide-react';
+import { Plus, UserX, KeyRound, Building2, BookOpen, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ProfileRow, UserRole } from '@/types/domain';
 
@@ -22,12 +23,14 @@ const ROLE_LABELS: Record<UserRole, string> = {
     chef_centre: 'Chef de Centre',
     chef_etablissement: 'Chef d\'Établissement',
     tutelle: 'Tutelle',
+    enseignant: 'Enseignant',
 };
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
     { value: 'chef_etablissement', label: 'Chef d\'Établissement' },
     { value: 'chef_centre', label: 'Chef de Centre' },
     { value: 'tutelle', label: 'Tutelle' },
+    { value: 'enseignant', label: 'Enseignant' },
     { value: 'admin', label: 'Administrateur' },
 ];
 
@@ -58,6 +61,7 @@ export default function UtilisateursPage() {
     const [disableTarget, setDisableTarget] = useState<ProfileRow | null>(null);
     const [resetTarget, setResetTarget] = useState<ProfileRow | null>(null);
     const [assignTarget, setAssignTarget] = useState<ProfileRow | null>(null);
+    const [disciplinesTarget, setDisciplinesTarget] = useState<ProfileRow | null>(null);
     const [resetPassword, setResetPassword] = useState('');
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
@@ -71,6 +75,11 @@ export default function UtilisateursPage() {
     const removeCentre = useRemoveCentre(assignTarget?.id ?? '');
     const assignEtab = useAssignEtablissement(assignTarget?.id ?? '');
     const removeEtab = useRemoveEtablissement(assignTarget?.id ?? '');
+
+    // Affectations disciplines (enseignant)
+    const { data: disciplineAssignments, isLoading: disciplinesLoading } =
+        useUserDisciplineAssignments(disciplinesTarget?.id ?? '');
+    const removeDiscipline = useRemoveEnseignantDiscipline('');
 
     const openCreate = () => {
         setForm(EMPTY_FORM);
@@ -227,6 +236,17 @@ export default function UtilisateursPage() {
                                 className="text-slate-500 hover:bg-slate-100"
                             >
                                 <Building2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                        {row.role === 'enseignant' && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDisciplinesTarget(row)}
+                                title="Voir les disciplines affectées"
+                                className="text-slate-500 hover:bg-slate-100"
+                            >
+                                <BookOpen className="h-4 w-4" />
                             </Button>
                         )}
                         {!isSelf && row.is_active && (
@@ -517,6 +537,59 @@ export default function UtilisateursPage() {
                             </div>
                         )}
                     </div>
+                )}
+            </Modal>
+
+            {/* Modal disciplines enseignant */}
+            <Modal
+                open={!!disciplinesTarget}
+                onOpenChange={(o) => { if (!o) setDisciplinesTarget(null); }}
+                title={`Disciplines — ${disciplinesTarget?.prenom} ${disciplinesTarget?.nom}`}
+                description="Disciplines affectées à cet enseignant. Pour affecter, allez dans la fiche de l'examen > onglet Enseignants."
+                footer={
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={() => setDisciplinesTarget(null)}>Fermer</Button>
+                    </div>
+                }
+            >
+                {disciplinesLoading ? (
+                    <div className="h-20 bg-slate-50 animate-pulse rounded-md" />
+                ) : (disciplineAssignments ?? []).length === 0 ? (
+                    <p className="text-sm text-slate-400 py-4 text-center">Aucune discipline affectée.</p>
+                ) : (
+                    <ul className="space-y-2">
+                        {(disciplineAssignments ?? []).map((ud) => {
+                            const raw = ud as unknown as Record<string, unknown>;
+                            const ed = raw.examen_discipline as Record<string, unknown>;
+                            const examen = ed?.examen as Record<string, unknown>;
+                            const discipline = ed?.discipline as Record<string, unknown>;
+                            const classe = raw.classe as Record<string, unknown> | null;
+                            return (
+                                <li key={ud.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2 text-sm">
+                                    <div>
+                                        <span className="font-medium">{discipline?.libelle as string}</span>
+                                        <span className="text-slate-400 ml-2">
+                                            {examen?.code as string} — {examen?.annee as number}
+                                        </span>
+                                        {classe && (
+                                            <span className="ml-2 text-xs bg-slate-100 text-slate-600 rounded px-1.5 py-0.5">
+                                                {classe.libelle as string}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="text-danger hover:bg-danger/10 h-6 w-6"
+                                        isLoading={removeDiscipline.isPending}
+                                        onClick={() => removeDiscipline.mutate(ud.id)}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </li>
+                            );
+                        })}
+                    </ul>
                 )}
             </Modal>
 

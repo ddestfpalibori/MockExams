@@ -45,7 +45,7 @@ export function useImportsLog(etablissementId: string) {
     });
 }
 
-/** Import candidats via Edge Function verify-import (mode preview) */
+/** Import candidats via Edge Function import-candidats (mode preview) */
 export function useImportPreview() {
     return useMutation({
         mutationFn: async (params: { file: File; examenId: string; etablissementId: string }) => {
@@ -60,7 +60,7 @@ export function useImportPreview() {
                 nb_valides: number;
                 nb_erreurs: number;
                 warnings: string[];
-            }>('verify-import', { body: formData, headers: authHeader });
+            }>('import-candidats', { body: formData, headers: authHeader });
 
             if (error) throw error;
             return data;
@@ -68,7 +68,7 @@ export function useImportPreview() {
     });
 }
 
-/** Import candidats via Edge Function verify-import (mode import final) */
+/** Import candidats via Edge Function import-candidats (mode import final) */
 export function useImportCandidats() {
     const queryClient = useQueryClient();
 
@@ -87,7 +87,7 @@ export function useImportCandidats() {
                 nb_succes: number;
                 nb_erreurs: number;
                 rapport: string[];
-            }>('verify-import', { body: formData, headers: authHeader });
+            }>('import-candidats', { body: formData, headers: authHeader });
 
             if (error) throw error;
             return data;
