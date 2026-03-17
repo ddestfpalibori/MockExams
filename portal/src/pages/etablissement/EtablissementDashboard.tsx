@@ -11,7 +11,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { ExportModal } from '@/components/ExportModal';
-import { Users, ClipboardList, Upload, Calendar, Download } from 'lucide-react';
+import { Users, ClipboardList, Upload, Calendar, Download, TrendingUp } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function EtablissementDashboard() {
@@ -111,10 +111,16 @@ export default function EtablissementDashboard() {
                             : 'Chargement...'}
                     </p>
                 </div>
-                <Button onClick={() => navigate('/etablissement/import')}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Importer des candidats
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => navigate('/etablissement/suivi-longitudinal')}>
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Suivi longitudinal
+                    </Button>
+                    <Button onClick={() => navigate('/etablissement/import')}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Importer des candidats
+                    </Button>
+                </div>
             </div>
 
             {isMulti && (

@@ -4,7 +4,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { ClipboardList, Users, School, BarChart2 } from 'lucide-react';
+import { ClipboardList, Users, School, BarChart2, TrendingUp } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function TutelleDashboard() {
@@ -93,13 +93,23 @@ export default function TutelleDashboard() {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <h2 className="text-xl font-semibold">Tous les examens</h2>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate('/tutelle/resultats')}
-                    >
-                        Voir les résultats
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/tutelle/suivi-longitudinal')}
+                        >
+                            <TrendingUp className="mr-1 h-3 w-3" />
+                            Suivi longitudinal
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/tutelle/resultats')}
+                        >
+                            Voir les résultats
+                        </Button>
+                    </div>
                 </div>
                 <DataTable
                     columns={columns}

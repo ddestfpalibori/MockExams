@@ -18,6 +18,7 @@ import { ExamenTabDisciplines } from './ExamenTabDisciplines';
 import { ExamenTabCentres } from './ExamenTabCentres';
 import { ExamenTabLien } from './ExamenTabLien';
 import { ExamenTabEnseignants } from './ExamenTabEnseignants';
+import { ExamenTabSuivi } from './ExamenTabSuivi';
 import { ReleveNotesModal } from '@/components/releves/ReleveNotesModal';
 import { cn } from '@/lib/utils';
 import {
@@ -35,6 +36,7 @@ import {
     Archive,
     FileText,
     Link2,
+    TrendingUp,
 } from 'lucide-react';
 import type { ExamStatus, CentreRow } from '@/types/domain';
 
@@ -42,7 +44,7 @@ const STATUTS_RELEVES: ExamStatus[] = ['DELIBERATION', 'DELIBERE', 'PUBLIE', 'CL
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type TabId = 'resume' | 'disciplines' | 'centres' | 'lien' | 'enseignants';
+type TabId = 'resume' | 'disciplines' | 'centres' | 'lien' | 'enseignants' | 'suivi';
 
 interface Tab {
     id: TabId;
@@ -58,6 +60,7 @@ const TABS: Tab[] = [
     { id: 'centres', label: 'Centres', icon: <School className="h-4 w-4" /> },
     { id: 'enseignants', label: 'Enseignants', icon: <GraduationCap className="h-4 w-4" /> },
     { id: 'lien', label: 'Lien source', icon: <Link2 className="h-4 w-4" /> },
+    { id: 'suivi', label: 'Suivi', icon: <TrendingUp className="h-4 w-4" /> },
 ];
 
 // Libellés lisibles pour les valeurs d'enum
@@ -292,6 +295,9 @@ export default function ExamenDetailPage() {
                     )}
                     {activeTab === 'lien' && (
                         <ExamenTabLien examenId={id!} isEditable={isConfig || isInscriptions} />
+                    )}
+                    {activeTab === 'suivi' && (
+                        <ExamenTabSuivi examenId={id!} />
                     )}
                 </div>
             </div>

@@ -212,6 +212,37 @@ export interface ExamenDisciplineWithEnseignants extends ExamenDisciplineDetail 
     }>;
 }
 
+// ─── Sprint 6C — Suivi Longitudinal ─────────────────────────────────────────
+
+/** Une étape dans la chaîne longitudinale (un examen de la chaîne A→B→C) */
+export interface EtapeLongitudinale {
+    examen_id: string;
+    code: string;
+    annee: number;
+    libelle: string;
+    status: ResultatStatus | null;
+    moyenne_centimes: number | null;
+    numero_anonyme: string | null;
+    /** 0 = examen cible (le plus récent), max = examen racine (le plus ancien) */
+    depth: number;
+}
+
+/** Ligne retournée par get_suivi_longitudinal() */
+export interface SuiviLongitudinalRow {
+    candidat_id: string;
+    racine_id: string | null;
+    etablissement_id: string;
+    etablissement_nom: string;
+    serie_id: string | null;
+    serie_code: string | null;
+    classe_id: string | null;
+    classe_libelle: string | null;
+    numero_anonyme: string | null;
+    nb_etapes: number;
+    /** Étapes ordonnées du plus ancien (index 0) au plus récent (index n-1) */
+    etapes: EtapeLongitudinale[];
+}
+
 export interface ImportLogRow {
     id: string;
     examen_id: string;

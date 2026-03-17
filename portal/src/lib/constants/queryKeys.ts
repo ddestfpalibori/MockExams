@@ -79,4 +79,8 @@ export const QUERY_KEYS = {
         all: ['classes'] as const,
         byEtablissement: (etablissementId: string) => ['classes', 'etab', etablissementId] as const,
     },
+    suiviLongitudinal: {
+        all: ['suivi-longitudinal'] as const,
+        byExamen: (examenId: string) => ['suivi-longitudinal', examenId] as const,
+    },
 } as const;

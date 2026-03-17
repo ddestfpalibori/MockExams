@@ -46,6 +46,9 @@ const EnseignantDashboard = lazy(() => import('./pages/enseignant/EnseignantDash
 const SuiviNotesPage = lazy(() => import('./pages/enseignant/SuiviNotesPage'));
 const RemediationPage = lazy(() => import('./pages/enseignant/RemediationPage'));
 
+// Suivi Longitudinal (partagé tutelle + chef_établissement)
+const SuiviLongitudinalPage = lazy(() => import('./pages/shared/SuiviLongitudinalPage'));
+
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
 const LoadingFallback = () => (
@@ -184,6 +187,7 @@ function App() {
                                                 <Route path="import" element={<ImportPage />} />
                                                 <Route path="resultats" element={<ResultatsPage />} />
                                                 <Route path="analytics" element={<AnalyticsPage />} />
+                                                <Route path="suivi-longitudinal" element={<SuiviLongitudinalPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
@@ -202,6 +206,7 @@ function App() {
                                                 <Route index element={<TutelleDashboard />} />
                                                 <Route path="resultats" element={<ResultatsPage />} />
                                                 <Route path="analytics" element={<AnalyticsPage />} />
+                                                <Route path="suivi-longitudinal" element={<SuiviLongitudinalPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>

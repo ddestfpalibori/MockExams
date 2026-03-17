@@ -1544,6 +1544,22 @@ export type Database = {
       is_chef_etablissement: { Args: never; Returns: boolean }
       is_enseignant: { Args: never; Returns: boolean }
       is_tutelle: { Args: never; Returns: boolean }
+      get_suivi_longitudinal: {
+        Args: { p_examen_cible_id: string }
+        Returns: {
+          candidat_id: string
+          racine_id: string | null
+          etablissement_id: string
+          etablissement_nom: string
+          serie_id: string | null
+          serie_code: string | null
+          classe_id: string | null
+          classe_libelle: string | null
+          numero_anonyme: string | null
+          nb_etapes: number
+          etapes: import('./database.types').Json
+        }[]
+      }
       my_centre_ids: { Args: never; Returns: string[] }
       my_etablissement_ids: { Args: never; Returns: string[] }
       my_examen_discipline_ids: { Args: never; Returns: string[] }
