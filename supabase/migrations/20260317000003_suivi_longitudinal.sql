@@ -67,7 +67,7 @@ BEGIN
       AND c.source_candidat_id IS NOT NULL
       -- Filtre établissement pour chef_etablissement
       AND (
-        v_role IN ('admin', 'tutelle', 'enseignant')
+        v_role IN ('admin', 'tutelle')
         OR (v_role = 'chef_etablissement' AND c.etablissement_id = ANY(v_etab_ids))
       )
 
@@ -109,7 +109,7 @@ BEGIN
   SELECT
     c_cible.id                                          AS candidat_id,
     -- Racine = nœud sans ancêtre (next_source IS NULL, profondeur max)
-    MAX(ce.current_id) FILTER (WHERE ce.next_source IS NULL) AS racine_id,
+    (ARRAY_AGG(ce.current_id) FILTER (WHERE ce.next_source IS NULL))[1] AS racine_id,
     c_cible.etablissement_id,
     etab.nom                                            AS etablissement_nom,
     c_cible.serie_id,
@@ -154,4 +154,5 @@ COMMENT ON FUNCTION get_suivi_longitudinal(uuid) IS
    ancien examen au plus récent. Filtre établissement pour chef_etablissement.
    Sprint 6C (2026-03-17).';
 
-GRANT EXECUTE ON FUNCTION get_suivi_longitudinal(uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION get_suivi_longitudinal(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION get_suivi_longitudinal(uuid) TO authenticated, service_role;

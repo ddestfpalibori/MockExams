@@ -67,7 +67,7 @@ function EvolutionIcon({ row }: { row: SuiviLongitudinalRow }) {
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export function ExamenTabSuivi({ examenId }: Props) {
-    const { data: rows, isLoading } = useSuiviLongitudinal(examenId);
+    const { data: rows, isLoading, isError } = useSuiviLongitudinal(examenId);
     const [filtreEtab, setFiltreEtab] = useState('');
     const [filtreSerie, setFiltreSerie] = useState('');
 
@@ -110,6 +110,13 @@ export function ExamenTabSuivi({ examenId }: Props) {
         ), [rows, filtreEtab, filtreSerie]);
 
     if (isLoading) return <div className="flex justify-center py-12"><LoadingSpinner /></div>;
+
+    if (isError) return (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+            <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-2" />
+            <p className="font-medium text-red-700">Impossible de charger le suivi longitudinal</p>
+        </div>
+    );
 
     if ((rows ?? []).length === 0) {
         return (
