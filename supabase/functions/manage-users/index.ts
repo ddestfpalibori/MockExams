@@ -24,7 +24,7 @@ interface CreateUserRequest {
   action: 'create';
   identifier: string; // email or username
   password: string;
-  role: 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle';
+  role: 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle' | 'enseignant';
   nom: string;
   prenom: string;
   telephone?: string;

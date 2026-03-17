@@ -160,6 +160,7 @@ export type Database = {
         Row: {
           candidat_fingerprint: string | null
           centre_id: string | null
+          classe_id: string | null
           created_at: string
           date_naissance_enc: string | null
           etablissement_id: string
@@ -181,6 +182,7 @@ export type Database = {
         Insert: {
           candidat_fingerprint?: string | null
           centre_id?: string | null
+          classe_id?: string | null
           created_at?: string
           date_naissance_enc?: string | null
           etablissement_id: string
@@ -202,6 +204,7 @@ export type Database = {
         Update: {
           candidat_fingerprint?: string | null
           centre_id?: string | null
+          classe_id?: string | null
           created_at?: string
           date_naissance_enc?: string | null
           etablissement_id?: string
@@ -1278,6 +1281,45 @@ export type Database = {
         }
         Relationships: []
       }
+      classes: {
+        Row: {
+          created_at: string
+          etablissement_id: string
+          id: string
+          libelle: string
+          serie_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          etablissement_id: string
+          id?: string
+          libelle: string
+          serie_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          etablissement_id?: string
+          id?: string
+          libelle?: string
+          serie_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_serie_id_fkey"
+            columns: ["serie_id"]
+            isOneToOne: false
+            referencedRelation: "series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_centres: {
         Row: {
           centre_id: string
@@ -1331,6 +1373,52 @@ export type Database = {
           },
           {
             foreignKeyName: "user_etablissements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_disciplines: {
+        Row: {
+          classe_id: string | null
+          created_at: string
+          examen_discipline_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          classe_id?: string | null
+          created_at?: string
+          examen_discipline_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          classe_id?: string | null
+          created_at?: string
+          examen_discipline_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_disciplines_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_disciplines_examen_discipline_id_fkey"
+            columns: ["examen_discipline_id"]
+            isOneToOne: false
+            referencedRelation: "examen_disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_disciplines_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1454,9 +1542,11 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_chef_centre: { Args: never; Returns: boolean }
       is_chef_etablissement: { Args: never; Returns: boolean }
+      is_enseignant: { Args: never; Returns: boolean }
       is_tutelle: { Args: never; Returns: boolean }
       my_centre_ids: { Args: never; Returns: string[] }
       my_etablissement_ids: { Args: never; Returns: string[] }
+      my_examen_discipline_ids: { Args: never; Returns: string[] }
       purger_examen_definitif: {
         Args: {
           p_confirmer?: boolean
@@ -1495,7 +1585,7 @@ export type Database = {
       resultat_status: "ADMIS" | "NON_ADMIS" | "RATTRAPAGE"
       table_continuity_scope: "CENTRE" | "DEPARTEMENT" | "EXAMEN"
       table_prefix_mode: "AUCUN" | "FIXE" | "CENTRE" | "COMMUNE" | "DEPARTEMENT"
-      user_role: "admin" | "chef_centre" | "chef_etablissement" | "tutelle"
+      user_role: "admin" | "chef_centre" | "chef_etablissement" | "tutelle" | "enseignant"
     }
     CompositeTypes: {
       [_ in never]: never

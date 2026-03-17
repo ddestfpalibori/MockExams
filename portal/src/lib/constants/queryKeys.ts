@@ -68,4 +68,15 @@ export const QUERY_KEYS = {
         etablissementsCommuns: (sourceId: string, cibleId: string) =>
             ['liens', 'etablissements-communs', sourceId, cibleId] as const,
     },
+    enseignant: {
+        all: ['enseignant'] as const,
+        myDisciplines: () => ['enseignant', 'my-disciplines'] as const,
+        examenEnseignants: (examenId: string) => ['enseignant', 'examen', examenId] as const,
+        suivi: (examenDisciplineId: string) => ['enseignant', 'suivi', examenDisciplineId] as const,
+        remediation: (examenId: string) => ['enseignant', 'remediation', examenId] as const,
+    },
+    classes: {
+        all: ['classes'] as const,
+        byEtablissement: (etablissementId: string) => ['classes', 'etab', etablissementId] as const,
+    },
 } as const;

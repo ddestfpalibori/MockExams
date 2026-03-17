@@ -179,6 +179,39 @@ export interface ExamenDetailStats {
     nb_disciplines: number;
 }
 
+export interface ClasseRow {
+    id: string;
+    etablissement_id: string;
+    serie_id: string | null;
+    libelle: string;
+    created_at: string;
+}
+
+/** Affectation enseignant ↔ discipline (+ classe optionnelle) */
+export interface UserDisciplineRow {
+    id: string;
+    user_id: string;
+    examen_discipline_id: string;
+    classe_id: string | null;
+    created_at: string;
+}
+
+/** user_disciplines enrichi avec les détails de la discipline et de la classe */
+export interface UserDisciplineDetail extends UserDisciplineRow {
+    examen_discipline: ExamenDisciplineDetail;
+    classe: ClasseRow | null;
+}
+
+/** ExamenDisciplineDetail enrichi avec les enseignants affectés */
+export interface ExamenDisciplineWithEnseignants extends ExamenDisciplineDetail {
+    enseignants: Array<{
+        user_discipline_id: string;
+        classe_id: string | null;
+        classe_libelle: string | null;
+        profile: Pick<ProfileRow, 'id' | 'nom' | 'prenom' | 'email_login'>;
+    }>;
+}
+
 export interface ImportLogRow {
     id: string;
     examen_id: string;

@@ -5,7 +5,7 @@
 
 import type { Session, User } from '@supabase/supabase-js';
 
-export type Role = 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle';
+export type Role = 'admin' | 'chef_centre' | 'chef_etablissement' | 'tutelle' | 'enseignant';
 
 export interface AuthContextType {
     session: Session | null;
