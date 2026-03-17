@@ -17,6 +17,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ExamenTabDisciplines } from './ExamenTabDisciplines';
 import { ExamenTabCentres } from './ExamenTabCentres';
 import { ExamenTabLien } from './ExamenTabLien';
+import { ExamenTabEnseignants } from './ExamenTabEnseignants';
 import { ReleveNotesModal } from '@/components/releves/ReleveNotesModal';
 import { cn } from '@/lib/utils';
 import {
@@ -24,6 +25,7 @@ import {
     Users,
     School,
     BookOpen,
+    GraduationCap,
     Play,
     CheckCircle2,
     Lock,
@@ -40,7 +42,7 @@ const STATUTS_RELEVES: ExamStatus[] = ['DELIBERATION', 'DELIBERE', 'PUBLIE', 'CL
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type TabId = 'resume' | 'disciplines' | 'centres' | 'lien';
+type TabId = 'resume' | 'disciplines' | 'centres' | 'lien' | 'enseignants';
 
 interface Tab {
     id: TabId;
@@ -54,6 +56,7 @@ const TABS: Tab[] = [
     { id: 'resume', label: 'Résumé', icon: <Settings className="h-4 w-4" /> },
     { id: 'disciplines', label: 'Disciplines', icon: <BookOpen className="h-4 w-4" /> },
     { id: 'centres', label: 'Centres', icon: <School className="h-4 w-4" /> },
+    { id: 'enseignants', label: 'Enseignants', icon: <GraduationCap className="h-4 w-4" /> },
     { id: 'lien', label: 'Lien source', icon: <Link2 className="h-4 w-4" /> },
 ];
 
@@ -283,6 +286,9 @@ export default function ExamenDetailPage() {
                     )}
                     {activeTab === 'centres' && (
                         <ExamenTabCentres examenId={id!} isEditable={isConfig} />
+                    )}
+                    {activeTab === 'enseignants' && (
+                        <ExamenTabEnseignants examenId={id!} />
                     )}
                     {activeTab === 'lien' && (
                         <ExamenTabLien examenId={id!} isEditable={isConfig || isInscriptions} />
