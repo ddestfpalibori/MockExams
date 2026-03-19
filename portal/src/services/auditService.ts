@@ -51,7 +51,7 @@ export async function fetchAuditLog(
     if (filters.table_name) query = query.eq('table_name', filters.table_name);
     if (filters.operation)  query = query.eq('operation', filters.operation);
     if (filters.date_from)  query = query.gte('performed_at', filters.date_from + 'T00:00:00Z');
-    if (filters.date_to)    query = query.lte('performed_at', filters.date_to   + 'T23:59:59Z');
+    if (filters.date_to)    query = query.lte('performed_at', filters.date_to   + 'T23:59:59.999Z');
 
     const { data, error, count } = await query;
     if (error) throw error;

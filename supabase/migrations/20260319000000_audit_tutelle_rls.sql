@@ -11,14 +11,7 @@
 
 CREATE POLICY "audit_log_select_tutelle"
   ON audit_log FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE id = auth.uid()
-        AND role = 'tutelle'
-        AND is_active = true
-    )
-  );
+  USING (is_tutelle());
 
 -- ─── 2. RPC déblocage consultation publique ───────────────────────────────────
 -- Réinitialise les tentatives et lockout d'un code d'accès bloqué.
