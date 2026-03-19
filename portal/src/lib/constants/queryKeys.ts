@@ -3,6 +3,7 @@
  * Structure hiérarchique pour invalidation ciblée ou globale.
  */
 import type { AnalyticsFilters } from '@/services/analyticsService';
+import type { AuditFilters } from '@/services/auditService';
 
 export const QUERY_KEYS = {
     examens: {
@@ -82,5 +83,10 @@ export const QUERY_KEYS = {
     suiviLongitudinal: {
         all: ['suivi-longitudinal'] as const,
         byExamen: (examenId: string) => ['suivi-longitudinal', examenId] as const,
+    },
+    audit: {
+        all: ['audit'] as const,
+        list: (filters: AuditFilters, page: number) => ['audit', 'list', filters, page] as const,
+        consultationsBloquees: () => ['audit', 'consultations-bloquees'] as const,
     },
 } as const;

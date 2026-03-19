@@ -1560,6 +1560,10 @@ export type Database = {
           etapes: import('./database.types').Json
         }[]
       }
+      debloquer_consultation: {
+        Args: { p_code_acces_id: string }
+        Returns: undefined
+      }
       my_centre_ids: { Args: never; Returns: string[] }
       my_etablissement_ids: { Args: never; Returns: string[] }
       my_examen_discipline_ids: { Args: never; Returns: string[] }

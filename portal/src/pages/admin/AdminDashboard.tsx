@@ -3,7 +3,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { DataTable } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { ClipboardList, Users, School, LayoutDashboard, Plus } from 'lucide-react';
+import { ClipboardList, Users, School, LayoutDashboard, Plus, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { ExamenRow } from '@/types/domain';
 
@@ -57,10 +57,16 @@ export default function AdminDashboard() {
                         Bienvenue ! Voici un aperçu global de la session d'examens.
                     </p>
                 </div>
-                <Button onClick={() => navigate('/admin/examens/nouveau')}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nouvel Examen
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => navigate('/admin/audit-log')}>
+                        <Shield className="mr-1 h-3 w-3" />
+                        Audit
+                    </Button>
+                    <Button onClick={() => navigate('/admin/examens/nouveau')}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Nouvel Examen
+                    </Button>
+                </div>
             </div>
 
             {/* KPIs */}

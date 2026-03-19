@@ -4,7 +4,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { ClipboardList, Users, School, BarChart2, TrendingUp } from 'lucide-react';
+import { ClipboardList, Users, School, BarChart2, TrendingUp, Shield } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function TutelleDashboard() {
@@ -101,6 +101,14 @@ export default function TutelleDashboard() {
                         >
                             <TrendingUp className="mr-1 h-3 w-3" />
                             Suivi longitudinal
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate('/tutelle/audit-log')}
+                        >
+                            <Shield className="mr-1 h-3 w-3" />
+                            Journal d'audit
                         </Button>
                         <Button
                             variant="ghost"

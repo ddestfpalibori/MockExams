@@ -49,6 +49,9 @@ const RemediationPage = lazy(() => import('./pages/enseignant/RemediationPage'))
 // Suivi Longitudinal (partagé tutelle + chef_établissement)
 const SuiviLongitudinalPage = lazy(() => import('./pages/shared/SuiviLongitudinalPage'));
 
+// Audit Log (admin + tutelle)
+const AuditLogPage = lazy(() => import('./pages/admin/AuditLogPage'));
+
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
 const LoadingFallback = () => (
@@ -144,6 +147,7 @@ function App() {
                                                 <Route path="examens/:id" element={<ExamenDetailPage />} />
                                                 <Route path="utilisateurs" element={<UtilisateursPage />} />
                                                 <Route path="analytics" element={<AnalyticsPage />} />
+                                                <Route path="audit-log" element={<AuditLogPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
@@ -188,6 +192,7 @@ function App() {
                                                 <Route path="resultats" element={<ResultatsPage />} />
                                                 <Route path="analytics" element={<AnalyticsPage />} />
                                                 <Route path="suivi-longitudinal" element={<SuiviLongitudinalPage />} />
+                                                <Route path="audit-log" element={<AuditLogPage />} />
                                             </Routes>
                                         </Suspense>
                                     </ErrorBoundary>
