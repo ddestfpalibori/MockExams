@@ -88,6 +88,7 @@ export const RootLayout = () => {
                         items: [
                             { label: 'Salles', path: '/centre/salles' },
                             { label: 'Affectation', path: '/centre/affectation' },
+                            { label: 'Reprise centre', path: '/centre/reprise-preparation' },
                         ]
                     },
                     {
@@ -122,6 +123,7 @@ export const RootLayout = () => {
                         items: [
                             { label: 'Salles', path: '/centre/salles' },
                             { label: 'Affectation', path: '/centre/affectation' },
+                            { label: 'Reprise centre', path: '/centre/reprise-preparation' },
                         ]
                     },
                     {

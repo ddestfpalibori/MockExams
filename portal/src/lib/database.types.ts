@@ -1539,6 +1539,34 @@ export type Database = {
         Args: { p_centre_id: string; p_examen_id: string }
         Returns: number
       }
+      reprendre_preparation_centre: {
+        Args: {
+          p_centre_id: string
+          p_examen_id: string
+          p_mode: "fill_only" | "overwrite_confirmed" | "validate_only"
+          p_rows: {
+            matricule: string
+            numero_anonyme?: string
+            numero_table: number
+            row_index: number
+            salle_nom?: string
+          }[]
+        }
+        Returns: {
+          conflicts: number
+          errors: number
+          ignored: number
+          lines: {
+            action: "ignored_existing_values" | "none" | "updated" | "would_update"
+            matricule: string | null
+            message: string
+            row_index: number
+            status: "conflict" | "error" | "ignored" | "ok"
+          }[]
+          mode: "fill_only" | "overwrite_confirmed" | "validate_only"
+          updated: number
+        }
+      }
       is_admin: { Args: never; Returns: boolean }
       is_chef_centre: { Args: never; Returns: boolean }
       is_chef_etablissement: { Args: never; Returns: boolean }

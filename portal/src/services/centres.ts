@@ -1,6 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import type { CentreRow, SalleRow } from '@/types/domain';
 import type { Database } from '@/lib/database.types';
+import type {
+    PreparationCentreImportResult,
+    PreparationCentreImportRow,
+} from '@/services/preparationCentreTypes';
 
 type SalleInsert = Database['public']['Tables']['salles']['Insert'];
 type SalleUpdate = Database['public']['Tables']['salles']['Update'];
@@ -144,6 +148,24 @@ export const centreService = {
 
         if (error) throw error;
         return count ?? 0;
+    },
+
+    /** RPC — Reprise des informations de preparation deja faites dans un centre */
+    async reprendrePreparationCentre(params: {
+        centreId: string;
+        examenId: string;
+        mode: 'validate_only' | 'fill_only' | 'overwrite_confirmed';
+        rows: PreparationCentreImportRow[];
+    }): Promise<PreparationCentreImportResult> {
+        const { data, error } = await supabase.rpc('reprendre_preparation_centre', {
+            p_examen_id: params.examenId,
+            p_centre_id: params.centreId,
+            p_mode: params.mode,
+            p_rows: params.rows,
+        });
+
+        if (error) throw error;
+        return data;
     },
 
     /** Met à jour un centre */

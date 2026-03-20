@@ -10,7 +10,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { DoorOpen, Users, ClipboardList, FileCheck } from 'lucide-react';
+import { DoorOpen, Users, ClipboardList, FileCheck, Upload } from 'lucide-react';
 import type { ExamenRow } from '@/types/domain';
 
 export default function CentreDashboard() {
@@ -59,15 +59,24 @@ export default function CentreDashboard() {
             header: 'Actions disponibles',
             cell: (row) => (
                 <div className="flex flex-wrap items-center gap-1">
-                    {row.status === 'COMPOSITION' && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate('/centre/affectation')}
-                        >
-                            Affecter
-                        </Button>
-                    )}
+                            {row.status === 'COMPOSITION' && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => navigate('/centre/affectation')}
+                                    >
+                                        Affecter
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => navigate('/centre/reprise-preparation')}
+                                    >
+                                        Reprise centre
+                                    </Button>
+                                </>
+                            )}
                     {(row.status === 'COMPOSITION' || row.status === 'INSCRIPTIONS') && (
                         <Button
                             variant="outline"
@@ -172,6 +181,7 @@ export default function CentreDashboard() {
                 {[
                     { label: 'Salles', path: '/centre/salles', icon: DoorOpen },
                     { label: 'Affectation', path: '/centre/affectation', icon: Users },
+                    { label: 'Reprise centre', path: '/centre/reprise-preparation', icon: Upload },
                     { label: 'Anonymats', path: '/centre/anonymats', icon: FileCheck },
                     { label: 'Lots', path: '/centre/lots', icon: ClipboardList },
                 ].map(({ label, path, icon: Icon }) => (

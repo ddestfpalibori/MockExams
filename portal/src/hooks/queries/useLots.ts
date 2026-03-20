@@ -99,3 +99,26 @@ export function useGenererAnonymats(centreId: string) {
         },
     });
 }
+
+export function useReprendrePreparationCentre(centreId: string, examenId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (params: {
+            centreId: string;
+            examenId: string;
+            mode: 'validate_only' | 'fill_only' | 'overwrite_confirmed';
+            rows: Parameters<typeof centreService.reprendrePreparationCentre>[0]['rows'];
+        }) => centreService.reprendrePreparationCentre(params),
+        onSuccess: (result) => {
+            if (result.mode !== 'validate_only') {
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.candidats.all });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.centres.stats(centreId) });
+                queryClient.invalidateQueries({ queryKey: QUERY_KEYS.centres.salles(centreId, examenId) });
+                toast.success(`${result.updated} ligne(s) appliquée(s)`);
+            } else {
+                toast.success('Analyse terminée');
+            }
+        },
+    });
+}

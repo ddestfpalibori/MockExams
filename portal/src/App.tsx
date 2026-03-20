@@ -28,6 +28,7 @@ const AffectationPage = lazy(() => import('./pages/centre/AffectationPage'));
 const AnonymatsPage = lazy(() => import('./pages/centre/AnonymatsPage'));
 const LotsPage = lazy(() => import('./pages/centre/LotsPage'));
 const SaisieNotesPage = lazy(() => import('./pages/centre/SaisieNotesPage'));
+const PreparationCentreImportPage = lazy(() => import('./pages/centre/PreparationCentreImportPage'));
 
 // Chef Établissement
 const EtablissementDashboard = lazy(() => import('./pages/etablissement/EtablissementDashboard'));
@@ -167,6 +168,7 @@ function App() {
                                                 <Route path="salles" element={<SallesPage />} />
                                                 <Route path="affectation" element={<AffectationPage />} />
                                                 <Route path="anonymats" element={<AnonymatsPage />} />
+                                                <Route path="reprise-preparation" element={<PreparationCentreImportPage />} />
                                                 <Route path="lots" element={<LotsPage />} />
                                                 <Route path="saisie" element={<SaisieNotesPage />} />
                                                 <Route path="resultats" element={<ResultatsPage />} />
